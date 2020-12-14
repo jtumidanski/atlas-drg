@@ -32,13 +32,13 @@ public class DropEventProducer {
       producer = KafkaProducerFactory.createProducer("Drop Registry", System.getenv("BOOTSTRAP_SERVERS"));
    }
 
-   public void createDrop(int worldId, int channelId, Drop drop) {
+   public void createDrop(int worldId, int channelId, int mapId, Drop drop) {
       String topic = System.getenv(EventConstants.TOPIC_DROP_EVENT);
       long key = produceKey(worldId, channelId);
       producer.send(new ProducerRecord<>(topic, key,
-            new DropEvent(drop.id(), drop.itemId(), drop.quantity(), drop.type(), drop.x(), drop.y(), drop.ownerId(),
-                  drop.ownerPartyId(), drop.dropTime(), drop.dropperId(), drop.dropperX(), drop.dropperY(), drop.playerDrop(),
-                  drop.mod())));
+            new DropEvent(worldId, channelId, mapId, drop.id(), drop.itemId(), drop.quantity(), drop.type(), drop.x(), drop.y(),
+                  drop.ownerId(), drop.ownerPartyId(), drop.dropTime(), drop.dropperId(), drop.dropperX(), drop.dropperY(),
+                  drop.playerDrop(), drop.mod())));
    }
 
    protected Long produceKey(int worldId, int channelId) {

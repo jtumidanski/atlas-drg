@@ -116,7 +116,7 @@ public final class DropProcessor {
 
       Drop drop = DropRegistry.getInstance().createDrop(0, quantity, dropType, dropPosition.x, dropPosition.y, killerId, null,
             System.currentTimeMillis(), monsterUniqueId, monsterX, monsterY, playerDrop, (byte) 1);
-      DropEventProducer.getInstance().createDrop(worldId, channelId, drop);
+      DropEventProducer.getInstance().createDrop(worldId, channelId, mapId, drop);
    }
 
    protected static Point calculateDropPosition(int mapId, int initialX, int initialY, int fallbackX, int fallbackY) {

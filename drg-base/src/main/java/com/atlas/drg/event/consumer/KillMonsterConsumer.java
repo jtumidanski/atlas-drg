@@ -29,6 +29,6 @@ public class KillMonsterConsumer implements SimpleEventHandler<MonsterKilledEven
 
    @Override
    public String getTopic() {
-      return System.getenv(EventConstants.TOPIC_MONSTER_EVENT);
+      return System.getenv(EventConstants.TOPIC_MONSTER_KILLED_EVENT);
    }
 }
