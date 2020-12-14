@@ -83,7 +83,8 @@ public final class DropProcessor {
       if (monsterDrop.itemId() == 0) {
          spawnMeso(worldId, channelId, mapId, monsterUniqueId, x, y, killerId, dropType, monsterDrop, position);
       } else {
-         spawnItem(worldId, channelId, mapId, monsterUniqueId, x, y, killerId, dropType, monsterDrop, position);
+         spawnItem(worldId, channelId, mapId, monsterDrop.itemId(), monsterUniqueId, x, y, killerId, dropType, monsterDrop,
+               position);
       }
    }
 
@@ -93,11 +94,12 @@ public final class DropProcessor {
       int mesos = new Random().nextInt(drop.maximumQuantity() - drop.minimumQuantity()) + drop.minimumQuantity();
       if (mesos > 0) {
          //TODO apply characters meso buff.
-         spawnDrop(worldId, channelId, mapId, mesos, position.x, position.y, x, y, monsterUniqueId, killerId, false, dropType);
+         spawnDrop(worldId, channelId, mapId, 0, mesos, position.x, position.y, x, y, monsterUniqueId, killerId, false, dropType);
       }
    }
 
-   protected static void spawnItem(int worldId, int channelId, int mapId, int monsterUniqueId, int x, int y, int killerId,
+   protected static void spawnItem(int worldId, int channelId, int mapId, int itemId, int monsterUniqueId, int x, int y,
+                                   int killerId,
                                    byte dropType,
                                    MonsterDrop drop, Point position) {
       int quantity;
@@ -106,15 +108,17 @@ public final class DropProcessor {
       } else {
          quantity = new Random().nextInt(drop.maximumQuantity() - drop.minimumQuantity()) + drop.minimumQuantity();
       }
-      spawnDrop(worldId, channelId, mapId, quantity, position.x, position.y, x, y, monsterUniqueId, killerId, false, dropType);
+      spawnDrop(worldId, channelId, mapId, itemId, quantity, position.x, position.y, x, y, monsterUniqueId, killerId, false,
+            dropType);
    }
 
-   protected static void spawnDrop(int worldId, int channelId, int mapId, int quantity, int itemX, int itemY, int monsterX,
-                                   int monsterY, int monsterUniqueId, int killerId, boolean playerDrop, byte dropType) {
+   protected static void spawnDrop(int worldId, int channelId, int mapId, int itemId, int quantity, int itemX, int itemY,
+                                   int monsterX, int monsterY, int monsterUniqueId, int killerId, boolean playerDrop,
+                                   byte dropType) {
       Point dropPosition = calculateDropPosition(mapId, itemX, itemY, monsterX, monsterY);
       dropPosition = calculateDropPosition(mapId, dropPosition.x, dropPosition.y, dropPosition.x, dropPosition.y);
 
-      Drop drop = DropRegistry.getInstance().createDrop(0, quantity, dropType, dropPosition.x, dropPosition.y, killerId, null,
+      Drop drop = DropRegistry.getInstance().createDrop(itemId, quantity, dropType, dropPosition.x, dropPosition.y, killerId, null,
             System.currentTimeMillis(), monsterUniqueId, monsterX, monsterY, playerDrop, (byte) 1);
       DropEventProducer.getInstance().createDrop(worldId, channelId, mapId, drop);
    }
