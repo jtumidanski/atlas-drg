@@ -94,7 +94,8 @@ public final class DropProcessor {
       int mesos = new Random().nextInt(drop.maximumQuantity() - drop.minimumQuantity()) + drop.minimumQuantity();
       if (mesos > 0) {
          //TODO apply characters meso buff.
-         spawnDrop(worldId, channelId, mapId, 0, mesos, position.x, position.y, x, y, monsterUniqueId, killerId, false, dropType);
+         spawnDrop(worldId, channelId, mapId, 0, 0, mesos, position.x, position.y, x, y, monsterUniqueId, killerId,
+               false, dropType);
       }
    }
 
@@ -108,18 +109,18 @@ public final class DropProcessor {
       } else {
          quantity = new Random().nextInt(drop.maximumQuantity() - drop.minimumQuantity()) + drop.minimumQuantity();
       }
-      spawnDrop(worldId, channelId, mapId, itemId, quantity, position.x, position.y, x, y, monsterUniqueId, killerId, false,
-            dropType);
+      spawnDrop(worldId, channelId, mapId, itemId, quantity, 0, position.x, position.y, x, y, monsterUniqueId, killerId,
+            false, dropType);
    }
 
-   protected static void spawnDrop(int worldId, int channelId, int mapId, int itemId, int quantity, int itemX, int itemY,
+   protected static void spawnDrop(int worldId, int channelId, int mapId, int itemId, int quantity, int meso, int itemX, int itemY,
                                    int monsterX, int monsterY, int monsterUniqueId, int killerId, boolean playerDrop,
                                    byte dropType) {
       Point dropPosition = calculateDropPosition(mapId, itemX, itemY, monsterX, monsterY);
       dropPosition = calculateDropPosition(mapId, dropPosition.x, dropPosition.y, dropPosition.x, dropPosition.y);
 
-      Drop drop = DropRegistry.getInstance().createDrop(itemId, quantity, dropType, dropPosition.x, dropPosition.y, killerId, null,
-            System.currentTimeMillis(), monsterUniqueId, monsterX, monsterY, playerDrop, (byte) 1);
+      Drop drop = DropRegistry.getInstance().createDrop(itemId, quantity, meso, dropType, dropPosition.x, dropPosition.y,
+            killerId, null, System.currentTimeMillis(), monsterUniqueId, monsterX, monsterY, playerDrop, (byte) 1);
       DropEventProducer.getInstance().createDrop(worldId, channelId, mapId, drop);
    }
 

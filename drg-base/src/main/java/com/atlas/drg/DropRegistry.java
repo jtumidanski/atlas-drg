@@ -37,8 +37,8 @@ public class DropRegistry {
       dropMap = new ConcurrentHashMap<>();
    }
 
-   public Drop createDrop(int itemId, int quantity, int type, int x, int y, int ownerId, Integer ownerPartyId, long dropTime,
-                          int dropperId, int dropperX, int dropperY, boolean playerDrop, byte mod) {
+   public Drop createDrop(int itemId, int quantity, int meso, int type, int x, int y, int ownerId, Integer ownerPartyId,
+                          long dropTime, int dropperId, int dropperX, int dropperY, boolean playerDrop, byte mod) {
       Integer currentUniqueId;
       synchronized (registryLock) {
          List<Integer> existingIds = new ArrayList<>(dropMap.keySet());
@@ -50,8 +50,8 @@ public class DropRegistry {
       }
       Drop result;
       synchronized (currentUniqueId) {
-         result = new Drop(currentUniqueId, itemId, quantity, type, x, y, ownerId, ownerPartyId, dropTime, dropperId, dropperX,
-               dropperY, playerDrop, mod);
+         result = new Drop(currentUniqueId, itemId, quantity, meso, type, x, y, ownerId, ownerPartyId, dropTime, dropperId,
+               dropperX, dropperY, playerDrop, mod);
          dropMap.put(currentUniqueId, result);
       }
       return result;
