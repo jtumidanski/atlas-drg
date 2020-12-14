@@ -1,12 +1,16 @@
 package com.atlas.drg;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import com.atlas.drg.model.Drop;
+import com.atlas.drg.model.MapKey;
 
 public class DropRegistry {
    private static final Object lock = new Object();
@@ -16,6 +20,8 @@ public class DropRegistry {
    private static volatile DropRegistry instance;
 
    private final Map<Integer, Drop> dropMap;
+
+   private final Map<MapKey, Set<Integer>> dropsInMapMap;
 
    private final AtomicInteger runningUniqueId = new AtomicInteger(1000000001);
 
@@ -35,10 +41,12 @@ public class DropRegistry {
 
    private DropRegistry() {
       dropMap = new ConcurrentHashMap<>();
+      dropsInMapMap = new ConcurrentHashMap<>();
    }
 
-   public Drop createDrop(int itemId, int quantity, int meso, int type, int x, int y, int ownerId, Integer ownerPartyId,
-                          long dropTime, int dropperId, int dropperX, int dropperY, boolean playerDrop, byte mod) {
+   public Drop createDrop(int worldId, int channelId, int mapId, int itemId, int quantity, int meso, int type, int x, int y,
+                          int ownerId, Integer ownerPartyId, long dropTime, int dropperId, int dropperX, int dropperY,
+                          boolean playerDrop, byte mod) {
       Integer currentUniqueId;
       synchronized (registryLock) {
          List<Integer> existingIds = new ArrayList<>(dropMap.keySet());
@@ -50,10 +58,26 @@ public class DropRegistry {
       }
       Drop result;
       synchronized (currentUniqueId) {
-         result = new Drop(currentUniqueId, itemId, quantity, meso, type, x, y, ownerId, ownerPartyId, dropTime, dropperId,
-               dropperX, dropperY, playerDrop, mod);
+         result = new Drop(currentUniqueId, worldId, channelId, mapId, itemId, quantity, meso, type, x, y, ownerId, ownerPartyId,
+               dropTime, dropperId, dropperX, dropperY, playerDrop, mod);
          dropMap.put(currentUniqueId, result);
+         MapKey mapKey = new MapKey(worldId, channelId, mapId);
+         synchronized (mapKey) {
+            if (!dropsInMapMap.containsKey(mapKey)) {
+               dropsInMapMap.put(mapKey, new HashSet<>());
+            }
+            dropsInMapMap.get(mapKey).add(currentUniqueId);
+         }
       }
       return result;
+   }
+
+   public List<Drop> getDropsForMap(int worldId, int channelId, int mapId) {
+      MapKey mapKey = new MapKey(worldId, channelId, mapId);
+      synchronized (mapKey) {
+         return dropsInMapMap.get(mapKey).stream()
+               .map(dropMap::get)
+               .collect(Collectors.toList());
+      }
    }
 }

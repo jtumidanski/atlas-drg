@@ -39,7 +39,8 @@ public final class DropProcessor {
             .collect(Collectors.toList());
 
       IntStream.range(0, monsterDrops.size())
-            .forEach(i -> createDrop(worldId, channelId, mapId, i, monsterUniqueId, x, y, killerId, dropType, monsterDrops.get(i)));
+            .forEach(i -> createDrop(worldId, channelId, mapId, i + 1, monsterUniqueId, x, y, killerId, dropType,
+                  monsterDrops.get(i)));
    }
 
    protected static Stream<MonsterDrop> getMonsterDropStream(int monsterId) {
@@ -119,8 +120,9 @@ public final class DropProcessor {
       Point dropPosition = calculateDropPosition(mapId, itemX, itemY, monsterX, monsterY);
       dropPosition = calculateDropPosition(mapId, dropPosition.x, dropPosition.y, dropPosition.x, dropPosition.y);
 
-      Drop drop = DropRegistry.getInstance().createDrop(itemId, quantity, meso, dropType, dropPosition.x, dropPosition.y,
-            killerId, null, System.currentTimeMillis(), monsterUniqueId, monsterX, monsterY, playerDrop, (byte) 1);
+      Drop drop = DropRegistry.getInstance().createDrop(worldId, channelId, mapId, itemId, quantity, meso, dropType, dropPosition.x,
+            dropPosition.y, killerId, null, System.currentTimeMillis(), monsterUniqueId, monsterX, monsterY,
+            playerDrop, (byte) 1);
       DropEventProducer.getInstance().createDrop(worldId, channelId, mapId, drop);
    }
 
