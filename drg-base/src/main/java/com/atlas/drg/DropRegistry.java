@@ -1,6 +1,8 @@
 package com.atlas.drg;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +79,27 @@ public class DropRegistry {
       synchronized (mapKey) {
          return dropsInMapMap.get(mapKey).stream()
                .map(dropMap::get)
-               .collect(Collectors.toList());
+               .collect(Collectors.toUnmodifiableList());
+      }
+   }
+
+   public Collection<Drop> getDrops() {
+      return Collections.unmodifiableCollection(dropMap.values());
+   }
+
+   public void removeDrop(Integer uniqueId) {
+      synchronized (uniqueId) {
+         if (dropMap.containsKey(uniqueId)) {
+            Drop drop = dropMap.get(uniqueId);
+            dropMap.remove(uniqueId);
+
+            MapKey mapKey = new MapKey(drop.worldId(), drop.channelId(), drop.mapId());
+            synchronized (mapKey) {
+               if (dropsInMapMap.containsKey(mapKey)) {
+                  dropsInMapMap.get(mapKey).remove(uniqueId);
+               }
+            }
+         }
       }
    }
 }

@@ -21,6 +21,7 @@ USER root
 RUN mkdir service
 
 COPY --from=build /drg-base/target/ /service/
+COPY config.yaml /service/
 
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.5.0/wait /wait
 

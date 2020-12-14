@@ -1,0 +1,6 @@
+# (3 * 60 * 1000) Time before items start disappearing. Recommended to be set up to 3 minutes.
+itemExpireInterval: 180000
+# (5 * 60 * 1000) Interval between item monitoring tasks on maps, which checks for dangling (null) item objects on the map item history.
+itemMonitorTime: 300000
+# (10 * 10000) Interval between item expiring tasks on maps, which checks and makes disappear expired items.
+itemExpireCheck: 10000

@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 import com.atlas.dis.rest.attribute.MonsterDropAttributes;
 import com.atlas.drg.DropRegistry;
 import com.atlas.drg.event.producer.DropEventProducer;
+import com.atlas.drg.event.producer.DropExpiredEventProducer;
 import com.atlas.drg.model.Drop;
 import com.atlas.drg.model.MonsterDrop;
 import com.atlas.mis.attribute.DropPositionInputAttributes;
@@ -123,7 +124,7 @@ public final class DropProcessor {
       Drop drop = DropRegistry.getInstance().createDrop(worldId, channelId, mapId, itemId, quantity, meso, dropType, dropPosition.x,
             dropPosition.y, killerId, null, System.currentTimeMillis(), monsterUniqueId, monsterX, monsterY,
             playerDrop, (byte) 1);
-      DropEventProducer.getInstance().createDrop(worldId, channelId, mapId, drop);
+      DropEventProducer.createDrop(worldId, channelId, mapId, drop);
    }
 
    protected static Point calculateDropPosition(int mapId, int initialX, int initialY, int fallbackX, int fallbackY) {
@@ -144,5 +145,14 @@ public final class DropProcessor {
             .map(DataContainer::getData)
             .map(body -> new Point(body.getAttributes().x(), body.getAttributes().y()))
             .orElse(new Point(fallbackX, fallbackY));
+   }
+
+   public static void destroyAll() {
+      DropRegistry.getInstance().getDrops().forEach(DropProcessor::destroyDrop);
+   }
+
+   public static void destroyDrop(Drop drop) {
+      DropRegistry.getInstance().removeDrop(drop.id());
+      DropExpiredEventProducer.expireDrop(drop.worldId(), drop.channelId(), drop.mapId(), drop.id());
    }
 }
