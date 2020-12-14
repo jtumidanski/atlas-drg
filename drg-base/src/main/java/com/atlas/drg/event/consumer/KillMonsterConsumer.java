@@ -3,24 +3,18 @@ package com.atlas.drg.event.consumer;
 import com.atlas.drg.processor.DropProcessor;
 import com.atlas.kafka.consumer.SimpleEventHandler;
 import com.atlas.morg.rest.constant.EventConstants;
-import com.atlas.morg.rest.event.MonsterEvent;
-import com.atlas.morg.rest.event.MonsterEventType;
+import com.atlas.morg.rest.event.MonsterKilledEvent;
 
-public class KillMonsterConsumer implements SimpleEventHandler<MonsterEvent> {
+public class KillMonsterConsumer implements SimpleEventHandler<MonsterKilledEvent> {
    @Override
-   public void handle(Long key, MonsterEvent event) {
-      if (event.type().equals(MonsterEventType.KILLED)) {
-         createDrops(event.uniqueId(), event.actorId());
-      }
-   }
-
-   protected void createDrops(int uniqueId, int killerId) {
-      DropProcessor.createDrops(uniqueId, killerId);
+   public void handle(Long key, MonsterKilledEvent event) {
+      DropProcessor.createDrops(event.worldId(), event.channelId(), event.mapId(), event.uniqueId(), event.monsterId(), event.x()
+            , event.y(), event.killerId());
    }
 
    @Override
-   public Class<MonsterEvent> getEventClass() {
-      return MonsterEvent.class;
+   public Class<MonsterKilledEvent> getEventClass() {
+      return MonsterKilledEvent.class;
    }
 
    @Override
