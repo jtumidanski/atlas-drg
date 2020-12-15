@@ -1,6 +1,7 @@
 package com.atlas.drg.event.consumer;
 
 import com.atlas.drg.processor.DropProcessor;
+import com.atlas.drg.processor.TopicDiscoveryProcessor;
 import com.atlas.kafka.consumer.SimpleEventHandler;
 import com.atlas.morg.rest.constant.EventConstants;
 import com.atlas.morg.rest.event.MonsterKilledEvent;
@@ -29,6 +30,6 @@ public class KillMonsterConsumer implements SimpleEventHandler<MonsterKilledEven
 
    @Override
    public String getTopic() {
-      return System.getenv(EventConstants.TOPIC_MONSTER_KILLED_EVENT);
+      return TopicDiscoveryProcessor.getTopic(EventConstants.TOPIC_MONSTER_KILLED_EVENT);
    }
 }
