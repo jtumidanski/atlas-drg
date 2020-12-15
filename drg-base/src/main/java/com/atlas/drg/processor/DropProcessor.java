@@ -52,7 +52,7 @@ public final class DropProcessor {
             .getRestClient(MonsterDropAttributes.class)
             .getWithResponse()
             .result()
-            .map(DataContainer::getDataAsList)
+            .map(DataContainer::dataList)
             .orElse(Collections.emptyList())
             .stream()
             .map(ModelFactory::createMonsterDrop);
@@ -142,7 +142,7 @@ public final class DropProcessor {
                   .inputObject()
             )
             .result()
-            .map(DataContainer::getData)
+            .flatMap(DataContainer::data)
             .map(body -> new Point(body.getAttributes().x(), body.getAttributes().y()))
             .orElse(new Point(fallbackX, fallbackY));
    }
