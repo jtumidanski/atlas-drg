@@ -13,7 +13,7 @@ import com.atlas.drg.rest.processor.DropProcessor;
 @Path("drops")
 public class DropResource {
    @GET
-   @Path("/{id}}")
+   @Path("/{id}")
    @Consumes(MediaType.APPLICATION_JSON)
    @Produces(MediaType.APPLICATION_JSON)
    public Response getDropById(@PathParam("id") Integer id) {

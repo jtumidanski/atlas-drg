@@ -6,6 +6,8 @@ import java.util.Optional;
 
 import com.atlas.drg.event.DropEvent;
 import com.atlas.drg.event.DropExpiredEvent;
+import com.atlas.drg.event.DropPickedUpEvent;
+import com.atlas.drg.event.DropReservationEvent;
 import com.atlas.drg.processor.TopicDiscoveryProcessor;
 import com.atlas.kafka.KafkaProducerFactory;
 import org.apache.kafka.clients.producer.Producer;
@@ -40,11 +42,20 @@ public class EventProducerRegistry {
             KafkaProducerFactory.createProducer("Drop Registry", System.getenv("BOOTSTRAP_SERVERS")));
       producerMap.put(DropExpiredEvent.class,
             KafkaProducerFactory.createProducer("Drop Registry", System.getenv("BOOTSTRAP_SERVERS")));
+      producerMap.put(DropReservationEvent.class,
+            KafkaProducerFactory.createProducer("Drop Registry", System.getenv("BOOTSTRAP_SERVERS")));
+      producerMap.put(DropPickedUpEvent.class,
+            KafkaProducerFactory.createProducer("Drop Registry", System.getenv("BOOTSTRAP_SERVERS")));
       topicMap = new HashMap<>();
    }
 
    public <T> void send(Class<T> clazz, String topic, int worldId, int channelId, T event) {
       ProducerRecord<Long, T> record = new ProducerRecord<>(getTopic(topic), produceKey(worldId, channelId), event);
+      getProducer(clazz).ifPresent(producer -> producer.send(record));
+   }
+
+   public <T> void send(Class<T> clazz, String topic, long key, T event) {
+      ProducerRecord<Long, T> record = new ProducerRecord<>(getTopic(topic), key, event);
       getProducer(clazz).ifPresent(producer -> producer.send(record));
    }
 

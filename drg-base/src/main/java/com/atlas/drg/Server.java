@@ -5,6 +5,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.atlas.drg.event.consumer.KillMonsterConsumer;
+import com.atlas.drg.event.consumer.PickupDropConsumer;
+import com.atlas.drg.event.consumer.ReserveDropConsumer;
 import com.atlas.drg.processor.DropProcessor;
 import com.atlas.drg.task.DropExpireTask;
 import com.atlas.kafka.consumer.SimpleEventConsumerFactory;
@@ -17,6 +19,8 @@ public class Server {
       Runtime.getRuntime().addShutdownHook(new Thread(DropProcessor::destroyAll));
 
       SimpleEventConsumerFactory.create(new KillMonsterConsumer());
+      SimpleEventConsumerFactory.create(new ReserveDropConsumer());
+      SimpleEventConsumerFactory.create(new PickupDropConsumer());
 
       Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(new DropExpireTask(),
             0,

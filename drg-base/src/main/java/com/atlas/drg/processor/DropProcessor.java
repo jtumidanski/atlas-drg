@@ -12,6 +12,8 @@ import com.atlas.dis.rest.attribute.MonsterDropAttributes;
 import com.atlas.drg.DropRegistry;
 import com.atlas.drg.event.producer.DropEventProducer;
 import com.atlas.drg.event.producer.DropExpiredEventProducer;
+import com.atlas.drg.event.producer.DropPickedUpEventProducer;
+import com.atlas.drg.event.producer.DropReservationEventProducer;
 import com.atlas.drg.model.Drop;
 import com.atlas.drg.model.MonsterDrop;
 import com.atlas.mis.attribute.DropPositionInputAttributes;
@@ -154,5 +156,19 @@ public final class DropProcessor {
    public static void destroyDrop(Drop drop) {
       DropRegistry.getInstance().removeDrop(drop.id());
       DropExpiredEventProducer.expireDrop(drop.worldId(), drop.channelId(), drop.mapId(), drop.id());
+   }
+
+   public static void reserveDrop(int dropId, int characterId) {
+      DropRegistry.getInstance().reserveDrop(dropId, characterId)
+            .ifPresentOrElse(
+                  drop -> DropReservationEventProducer.reservationSuccess(dropId, characterId),
+                  () -> DropReservationEventProducer.reservationFailure(dropId, characterId)
+            );
+   }
+
+   public static void pickupDrop(int dropId, int characterId) {
+      DropRegistry.getInstance()
+            .removeDrop(dropId)
+            .ifPresent(drop -> DropPickedUpEventProducer.emit(dropId, characterId, drop.mapId()));
    }
 }

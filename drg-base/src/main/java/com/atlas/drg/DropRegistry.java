@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import com.atlas.drg.model.Drop;
+import com.atlas.drg.model.DropStatus;
 import com.atlas.drg.model.MapKey;
 
 public class DropRegistry {
@@ -25,6 +26,8 @@ public class DropRegistry {
    private final Map<Integer, Drop> dropMap;
 
    private final Map<MapKey, Set<Integer>> dropsInMapMap;
+
+   private final Map<Integer, Integer> dropReservation;
 
    private final AtomicInteger runningUniqueId = new AtomicInteger(1000000001);
 
@@ -45,6 +48,7 @@ public class DropRegistry {
    private DropRegistry() {
       dropMap = new ConcurrentHashMap<>();
       dropsInMapMap = new ConcurrentHashMap<>();
+      dropReservation = new ConcurrentHashMap<>();
    }
 
    public Drop createDrop(int worldId, int channelId, int mapId, int itemId, int quantity, int meso, int type, int x, int y,
@@ -62,7 +66,7 @@ public class DropRegistry {
       Drop result;
       synchronized (currentUniqueId) {
          result = new Drop(currentUniqueId, worldId, channelId, mapId, itemId, quantity, meso, type, x, y, ownerId, ownerPartyId,
-               dropTime, dropperId, dropperX, dropperY, playerDrop, mod);
+               dropTime, dropperId, dropperX, dropperY, playerDrop, mod, DropStatus.AVAILABLE);
          dropMap.put(currentUniqueId, result);
          MapKey mapKey = new MapKey(worldId, channelId, mapId);
          synchronized (mapKey) {
@@ -88,10 +92,11 @@ public class DropRegistry {
       return Collections.unmodifiableCollection(dropMap.values());
    }
 
-   public void removeDrop(Integer uniqueId) {
+   public Optional<Drop> removeDrop(Integer uniqueId) {
       synchronized (uniqueId) {
+         Drop drop = null;
          if (dropMap.containsKey(uniqueId)) {
-            Drop drop = dropMap.get(uniqueId);
+            drop = dropMap.get(uniqueId);
             dropMap.remove(uniqueId);
 
             MapKey mapKey = new MapKey(drop.worldId(), drop.channelId(), drop.mapId());
@@ -101,6 +106,8 @@ public class DropRegistry {
                }
             }
          }
+         dropReservation.remove(uniqueId);
+         return Optional.ofNullable(drop);
       }
    }
 
@@ -111,5 +118,24 @@ public class DropRegistry {
          }
          return Optional.empty();
       }
+   }
+
+   public Optional<Drop> reserveDrop(Integer uniqueId, int characterId) {
+      synchronized (uniqueId) {
+         if (dropMap.containsKey(uniqueId)) {
+            Drop drop = dropMap.get(uniqueId);
+            if (drop.status().equals(DropStatus.AVAILABLE)) {
+               Drop updatedDrop = drop.reserve();
+               dropMap.put(uniqueId, updatedDrop);
+               dropReservation.put(uniqueId, characterId);
+               return Optional.of(updatedDrop);
+            } else {
+               if (dropReservation.containsKey(uniqueId) && dropReservation.get(uniqueId).equals(characterId)) {
+                  return Optional.of(drop);
+               }
+            }
+         }
+      }
+      return Optional.empty();
    }
 }
