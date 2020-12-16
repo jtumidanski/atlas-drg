@@ -7,6 +7,8 @@ public class EventConstants {
 
    public static final String TOPIC_RESERVE_DROP_COMMAND = "TOPIC_RESERVE_DROP_COMMAND";
 
+   public static final String TOPIC_CANCEL_DROP_RESERVATION_COMMAND = "TOPIC_CANCEL_DROP_RESERVATION_COMMAND";
+
    public static final String TOPIC_PICKUP_DROP_COMMAND = "TOPIC_PICKUP_DROP_COMMAND";
 
    public static final String TOPIC_DROP_RESERVATION_EVENT = "TOPIC_DROP_RESERVATION_EVENT";
