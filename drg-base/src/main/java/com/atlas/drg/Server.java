@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.atlas.drg.event.consumer.CancelDropReservationConsumer;
 import com.atlas.drg.event.consumer.KillMonsterConsumer;
 import com.atlas.drg.event.consumer.PickupDropConsumer;
 import com.atlas.drg.event.consumer.ReserveDropConsumer;
@@ -21,6 +22,7 @@ public class Server {
       SimpleEventConsumerFactory.create(new KillMonsterConsumer());
       SimpleEventConsumerFactory.create(new ReserveDropConsumer());
       SimpleEventConsumerFactory.create(new PickupDropConsumer());
+      SimpleEventConsumerFactory.create(new CancelDropReservationConsumer());
 
       Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(new DropExpireTask(),
             0,

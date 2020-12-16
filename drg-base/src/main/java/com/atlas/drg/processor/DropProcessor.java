@@ -171,4 +171,8 @@ public final class DropProcessor {
             .removeDrop(dropId)
             .ifPresent(drop -> DropPickedUpEventProducer.emit(dropId, characterId, drop.mapId()));
    }
+
+   public static void cancelDropReservation(int dropId, int characterId) {
+      DropRegistry.getInstance().cancelDropReservation(dropId, characterId);
+   }
 }

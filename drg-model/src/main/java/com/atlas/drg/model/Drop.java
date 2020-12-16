@@ -8,4 +8,8 @@ public record Drop(int id, int worldId, int channelId, int mapId, int itemId, in
    public Drop reserve() {
       return new DropBuilder(this).setStatus(DropStatus.RESERVED).build();
    }
+
+   public Drop cancelReservation() {
+      return new DropBuilder(this).setStatus(DropStatus.AVAILABLE).build();
+   }
 }

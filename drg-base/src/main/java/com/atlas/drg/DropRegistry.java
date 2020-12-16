@@ -138,4 +138,18 @@ public class DropRegistry {
       }
       return Optional.empty();
    }
+
+   public void cancelDropReservation(Integer uniqueId, int characterId) {
+      synchronized (uniqueId) {
+         if (dropMap.containsKey(uniqueId) && dropReservation.containsKey(uniqueId)
+               && dropReservation.get(uniqueId) == characterId) {
+            Drop drop = dropMap.get(uniqueId);
+            if (drop.status().equals(DropStatus.RESERVED)) {
+               Drop updatedDrop = drop.cancelReservation();
+               dropMap.put(uniqueId, updatedDrop);
+               dropReservation.remove(uniqueId);
+            }
+         }
+      }
+   }
 }
