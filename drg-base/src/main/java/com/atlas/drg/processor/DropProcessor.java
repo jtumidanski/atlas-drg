@@ -174,5 +174,6 @@ public final class DropProcessor {
 
    public static void cancelDropReservation(int dropId, int characterId) {
       DropRegistry.getInstance().cancelDropReservation(dropId, characterId);
+      DropReservationEventProducer.reservationFailure(dropId, characterId);
    }
 }
