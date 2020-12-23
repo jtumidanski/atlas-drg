@@ -1,13 +1,14 @@
 package com.atlas.drg.processor;
 
 import java.awt.*;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
+import com.app.rest.util.RestResponseUtil;
 import com.atlas.dis.rest.attribute.MonsterDropAttributes;
 import com.atlas.drg.DropRegistry;
 import com.atlas.drg.event.producer.DropEventProducer;
@@ -23,6 +24,7 @@ import com.atlas.shared.rest.RestService;
 import com.atlas.shared.rest.UriBuilder;
 
 import builder.ResultObjectBuilder;
+import rest.DataBody;
 import rest.DataContainer;
 
 public final class DropProcessor {
@@ -37,27 +39,35 @@ public final class DropProcessor {
       //    killer is in party? 1
       byte dropType = 0;
 
-      List<MonsterDrop> monsterDrops = getMonsterDropStream(monsterId)
-            .filter(monsterDrop -> evaluateSuccess(killerId, monsterDrop))
-            .collect(Collectors.toList());
-
-      IntStream.range(0, monsterDrops.size())
-            .forEach(i -> createDrop(worldId, channelId, mapId, i + 1, monsterUniqueId, x, y, killerId, dropType,
-                  monsterDrops.get(i)));
+      getMonsterDropStream(monsterId)
+            .thenApply(drops -> getSuccessfulDrops(killerId, drops))
+            .thenAccept(drops -> IntStream.range(0, drops.size())
+                  .forEach(i -> createDrop(worldId, channelId, mapId, i + 1, monsterUniqueId, x, y, killerId, dropType,
+                        drops.get(i))));
    }
 
-   protected static Stream<MonsterDrop> getMonsterDropStream(int monsterId) {
+   protected static CompletableFuture<List<MonsterDrop>> getMonsterDropStream(int monsterId) {
       return UriBuilder.service(RestService.DROP_INFORMATION)
             .path("monsters")
             .path("drops")
             .queryParam("monsterId", monsterId)
-            .getRestClient(MonsterDropAttributes.class)
-            .getWithResponse()
-            .result()
-            .map(DataContainer::dataList)
-            .orElse(Collections.emptyList())
-            .stream()
-            .map(ModelFactory::createMonsterDrop);
+            .getAsyncRestClient(MonsterDropAttributes.class)
+            .get()
+            .thenApply(RestResponseUtil::result)
+            .thenApply(DataContainer::dataList)
+            .thenApply(DropProcessor::getMonsterDropsFromBody);
+   }
+
+   protected static List<MonsterDrop> getSuccessfulDrops(int killerId, List<MonsterDrop> allDrops) {
+      return allDrops.stream()
+            .filter(monsterDrop -> evaluateSuccess(killerId, monsterDrop))
+            .collect(Collectors.toList());
+   }
+
+   protected static List<MonsterDrop> getMonsterDropsFromBody(List<DataBody<MonsterDropAttributes>> body) {
+      return body.stream()
+            .map(ModelFactory::createMonsterDrop)
+            .collect(Collectors.toList());
    }
 
    /**
@@ -120,21 +130,21 @@ public final class DropProcessor {
    protected static void spawnDrop(int worldId, int channelId, int mapId, int itemId, int quantity, int meso, int itemX, int itemY,
                                    int monsterX, int monsterY, int monsterUniqueId, int killerId, boolean playerDrop,
                                    byte dropType) {
-      Point dropPosition = calculateDropPosition(mapId, itemX, itemY, monsterX, monsterY);
-      dropPosition = calculateDropPosition(mapId, dropPosition.x, dropPosition.y, dropPosition.x, dropPosition.y);
-
-      Drop drop = DropRegistry.getInstance().createDrop(worldId, channelId, mapId, itemId, quantity, meso, dropType, dropPosition.x,
-            dropPosition.y, killerId, null, System.currentTimeMillis(), monsterUniqueId, monsterX, monsterY,
-            playerDrop, (byte) 1);
-      DropEventProducer.createDrop(worldId, channelId, mapId, drop);
+      calculateDropPosition(mapId, itemX, itemY, monsterX, monsterY)
+            .thenCompose(position -> calculateDropPosition(mapId, position.x, position.y, position.x, position.y))
+            .thenApply(position -> DropRegistry.getInstance().createDrop(worldId, channelId, mapId, itemId, quantity, meso,
+                  dropType, position.x, position.y, killerId, null, System.currentTimeMillis(), monsterUniqueId, monsterX,
+                  monsterY, playerDrop, (byte) 1))
+            .thenAccept(drop -> DropEventProducer.createDrop(worldId, channelId, mapId, drop));
    }
 
-   protected static Point calculateDropPosition(int mapId, int initialX, int initialY, int fallbackX, int fallbackY) {
+   protected static CompletableFuture<Point> calculateDropPosition(int mapId, int initialX, int initialY, int fallbackX,
+                                                                   int fallbackY) {
       return UriBuilder.service(RestService.MAP_INFORMATION)
             .pathParam("maps", mapId)
             .path("dropPosition")
-            .getRestClient(MapPointAttributes.class)
-            .createWithResponse(new ResultObjectBuilder(DropPositionInputAttributes.class, 0)
+            .getAsyncRestClient(MapPointAttributes.class)
+            .create(new ResultObjectBuilder(DropPositionInputAttributes.class, 0)
                   .setAttribute(new DropPositionInputAttributesBuilder()
                         .setInitialX(initialX)
                         .setInitialY(initialY)
@@ -143,10 +153,11 @@ public final class DropProcessor {
                   )
                   .inputObject()
             )
-            .result()
-            .flatMap(DataContainer::data)
-            .map(body -> new Point(body.getAttributes().x(), body.getAttributes().y()))
-            .orElse(new Point(fallbackX, fallbackY));
+            .thenApply(RestResponseUtil::result)
+            .thenApply(DataContainer::data)
+            .thenApply(Optional::get)
+            .thenApply(body -> new Point(body.getAttributes().x(), body.getAttributes().y()))
+            .exceptionally(fh -> new Point(fallbackX, fallbackY));
    }
 
    public static void destroyAll() {
