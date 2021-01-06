@@ -18,8 +18,7 @@ public final class DropReservationEventProducer {
    }
 
    protected static void reservationEvent(int dropId, int characterId, DropReservationType type) {
-      EventProducerRegistry.getInstance()
-            .send(DropReservationEvent.class, EventConstants.TOPIC_DROP_RESERVATION_EVENT, dropId,
-                  new DropReservationEvent(characterId, dropId, type));
+      EventProducerRegistry.getInstance().send(EventConstants.TOPIC_DROP_RESERVATION_EVENT, dropId,
+            new DropReservationEvent(characterId, dropId, type));
    }
 }

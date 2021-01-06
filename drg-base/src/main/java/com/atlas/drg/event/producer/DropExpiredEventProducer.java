@@ -9,7 +9,7 @@ public final class DropExpiredEventProducer {
    }
 
    public static void expireDrop(int worldId, int channelId, int mapId, int id) {
-      EventProducerRegistry.getInstance().send(DropExpiredEvent.class, EventConstants.TOPIC_DROP_EXPIRE_EVENT, worldId, channelId,
+      EventProducerRegistry.getInstance().send(EventConstants.TOPIC_DROP_EXPIRE_EVENT, mapId,
             new DropExpiredEvent(worldId, channelId, mapId, id));
    }
 }
