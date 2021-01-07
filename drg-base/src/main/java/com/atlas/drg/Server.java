@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.atlas.drg.constant.RestConstants;
 import com.atlas.drg.event.consumer.CancelDropReservationConsumer;
 import com.atlas.drg.event.consumer.KillMonsterConsumer;
 import com.atlas.drg.event.consumer.PickupDropConsumer;
@@ -12,7 +13,6 @@ import com.atlas.drg.processor.DropProcessor;
 import com.atlas.drg.task.DropExpireTask;
 import com.atlas.kafka.consumer.SimpleEventConsumerFactory;
 import com.atlas.shared.rest.RestServerFactory;
-import com.atlas.shared.rest.RestService;
 import com.atlas.shared.rest.UriBuilder;
 
 public class Server {
@@ -29,7 +29,7 @@ public class Server {
             ConfigurationRegistry.getInstance().getConfiguration().itemExpireCheck,
             TimeUnit.MILLISECONDS);
 
-      URI uri = UriBuilder.host(RestService.DROP_REGISTRY).uri();
+      URI uri = UriBuilder.host(RestConstants.SERVICE).uri();
       RestServerFactory.create(uri, "com.atlas.drg.rest");
    }
 }
