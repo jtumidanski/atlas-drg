@@ -20,7 +20,7 @@ import com.atlas.drg.model.MonsterDrop;
 import com.atlas.mis.attribute.DropPositionInputAttributes;
 import com.atlas.mis.attribute.MapPointAttributes;
 import com.atlas.mis.builder.DropPositionInputAttributesBuilder;
-import com.atlas.shared.rest.RestService;
+import com.atlas.mis.constant.RestConstants;
 import com.atlas.shared.rest.UriBuilder;
 
 import builder.ResultObjectBuilder;
@@ -47,7 +47,7 @@ public final class DropProcessor {
    }
 
    protected static CompletableFuture<List<MonsterDrop>> getMonsterDropStream(int monsterId) {
-      return UriBuilder.service(RestService.DROP_INFORMATION)
+      return UriBuilder.service(com.atlas.drg.constant.RestConstants.SERVICE)
             .path("monsters")
             .path("drops")
             .queryParam("monsterId", monsterId)
@@ -140,7 +140,7 @@ public final class DropProcessor {
 
    protected static CompletableFuture<Point> calculateDropPosition(int mapId, int initialX, int initialY, int fallbackX,
                                                                    int fallbackY) {
-      return UriBuilder.service(RestService.MAP_INFORMATION)
+      return UriBuilder.service(RestConstants.SERVICE)
             .pathParam("maps", mapId)
             .path("dropPosition")
             .getAsyncRestClient(MapPointAttributes.class)
