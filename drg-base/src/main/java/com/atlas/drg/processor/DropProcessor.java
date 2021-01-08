@@ -47,7 +47,7 @@ public final class DropProcessor {
    }
 
    protected static CompletableFuture<List<MonsterDrop>> getMonsterDropStream(int monsterId) {
-      return UriBuilder.service(com.atlas.drg.constant.RestConstants.SERVICE)
+      return UriBuilder.service(com.atlas.dis.constant.RestConstants.SERVICE)
             .path("monsters")
             .path("drops")
             .queryParam("monsterId", monsterId)
