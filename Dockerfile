@@ -13,7 +13,7 @@ COPY drg-api/src drg-api/src
 COPY drg-model/src drg-model/src
 COPY drg-base/src drg-base/src
 
-RUN mvn install
+RUN mvn install -Prunnable
 
 FROM openjdk:14-ea-jdk-alpine
 USER root
