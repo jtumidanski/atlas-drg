@@ -18,15 +18,15 @@ variables:
 
 stages:
   - stage: BuildArtifacts
-    drgplayName: Build and Deploy Artifacts
+    displayName: Build and Deploy Artifacts
     jobs:
       - job: Build
-        drgplayName: Build and Deploy Artifacts
+        displayName: Build and Deploy Artifacts
         pool:
           vmImage: 'ubuntu-latest'
         steps:
               - task: Docker@2
-                drgplayName: Build and push an image to container registry
+                displayName: Build and push an image to container registry
                 inputs:
                   command: buildAndPush
                   repository: $(imageRepository)
