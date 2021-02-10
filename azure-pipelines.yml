@@ -18,44 +18,19 @@ variables:
 
 stages:
   - stage: BuildArtifacts
-    displayName: Build and Deploy Artifacts
+    drgplayName: Build and Deploy Artifacts
     jobs:
       - job: Build
-        displayName: Build and Deploy Artifacts
+        drgplayName: Build and Deploy Artifacts
         pool:
-          vmImage: 'macos-latest'
+          vmImage: 'ubuntu-latest'
         steps:
-          - task: MavenAuthenticate@0
-            inputs:
-              artifactsFeeds: 'JustinTumidanski'
-              mavenServiceConnections: 'maven'
-          - task: Maven@3
-            inputs:
-              mavenPomFile: 'pom.xml'
-              goals: 'compile deploy'
-              publishJUnitResults: false
-              javaHomeOption: 'JDKVersion'
-              mavenVersionOption: 'Default'
-              mavenAuthenticateFeed: false
-              effectivePomSkip: false
-              sonarQubeRunAnalysis: false
-            env:
-              JAVA_HOME: $(JAVA_HOME_14_X64)
-              PATH: $(JAVA_HOME_14_X64)/bin:$(PATH)
-  # - stage: BuildDocker
-  #   displayName: Build and Push Docker Image
-  #   jobs:
-  #     - job: Build
-  #       displayName: Build and Push Docker Image
-  #       pool:
-  #         vmImage: 'ubuntu-latest'
-  #       steps:
-  #         - task: Docker@2
-  #           displayName: Build and push an image to container registry
-  #           inputs:
-  #             command: buildAndPush
-  #             repository: $(imageRepository)
-  #             dockerfile: $(dockerfilePath)
-  #             containerRegistry: $(dockerRegistryServiceConnection)
-  #             tags: |
-  #               $(tag)
+              - task: Docker@2
+                drgplayName: Build and push an image to container registry
+                inputs:
+                  command: buildAndPush
+                  repository: $(imageRepository)
+                  dockerfile: $(dockerfilePath)
+                  containerRegistry: $(dockerRegistryServiceConnection)
+                  tags: |
+                    $(tag)
