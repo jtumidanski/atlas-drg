@@ -66,7 +66,7 @@ func (c Consumer) Init() {
 		Brokers: []string{os.Getenv("BOOTSTRAP_SERVERS")},
 		Topic:   td.Attributes.Name,
 		GroupID: c.groupId,
-		MaxWait: 50 * time.Millisecond,
+		MaxWait: 500 * time.Millisecond,
 	})
 
 	readMessage := func(attempt int) (bool, interface{}, error) {
