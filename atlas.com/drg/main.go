@@ -7,8 +7,8 @@ import (
 	"atlas-drg/drop/gather"
 	"atlas-drg/drop/reservation/cancelled"
 	"atlas-drg/drop/reservation/reserved"
+	"atlas-drg/drop/spawn"
 	"atlas-drg/kafka/consumer"
-	"atlas-drg/monster/death"
 	"atlas-drg/rest"
 	tasks "atlas-drg/task"
 	"context"
@@ -53,7 +53,7 @@ func createTasks(l *log.Logger) {
 }
 
 func createEventConsumers(l *log.Logger) {
-	createEventConsumer(l, "TOPIC_MONSTER_KILLED_EVENT", death.MonsterKilledEventCreator(), death.HandleMonsterKilledEvent())
+	createEventConsumer(l, "TOPIC_SPAWN_DROP_COMMAND", spawn.CommandEventCreator(), spawn.HandleCommand())
 	createEventConsumer(l, "TOPIC_CANCEL_DROP_RESERVATION_COMMAND", cancelled.CancelDropReservationCommandCreator(), cancelled.HandleCancelDropReservationCommand())
 	createEventConsumer(l, "TOPIC_RESERVE_DROP_COMMAND", reserved.ReserveDropCommandCreator(), reserved.HandleReserveDropCommand())
 	createEventConsumer(l, "TOPIC_PICKUP_DROP_COMMAND", gather.GatherDropCommandCreator(), gather.HandleGatherDropCommand())
