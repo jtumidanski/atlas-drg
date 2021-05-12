@@ -1,6 +1,7 @@
 package main
 
 import (
+	spawn2 "atlas-drg/character/drop/spawn"
 	registries "atlas-drg/configuration"
 	"atlas-drg/drop"
 	"atlas-drg/drop/expired"
@@ -57,6 +58,7 @@ func createEventConsumers(l *log.Logger) {
 	createEventConsumer(l, "TOPIC_CANCEL_DROP_RESERVATION_COMMAND", cancelled.CancelDropReservationCommandCreator(), cancelled.HandleCancelDropReservationCommand())
 	createEventConsumer(l, "TOPIC_RESERVE_DROP_COMMAND", reserved.ReserveDropCommandCreator(), reserved.HandleReserveDropCommand())
 	createEventConsumer(l, "TOPIC_PICKUP_DROP_COMMAND", gather.GatherDropCommandCreator(), gather.HandleGatherDropCommand())
+	createEventConsumer(l, "TOPIC_SPAWN_CHARACTER_DROP_COMMAND", spawn2.CommandEventCreator(), spawn2.HandleCommand())
 }
 
 func createRestService(l *log.Logger) {

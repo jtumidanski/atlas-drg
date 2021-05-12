@@ -44,6 +44,14 @@ func (d *processor) SpawnDrop(worldId byte, channelId byte, mapId uint32, itemId
 	drop2.Producer(d.l, context.Background()).Emit(worldId, channelId, mapId, drop)
 }
 
+func (d *processor) SpawnCharacterDrop(worldId byte, channelId byte, mapId uint32, itemId uint32, equipmentId uint32, quantity uint32,
+	mesos uint32, dropType byte, x int16, y int16, ownerId uint32, ownerPartyId uint32, dropperId uint32,
+	dropperX int16, dropperY int16, playerDrop bool, mod byte) {
+	dropTime := uint64(time.Now().UnixNano() / int64(time.Millisecond))
+	drop := drop2.GetRegistry().CreateDrop(worldId, channelId, mapId, itemId, equipmentId, quantity, mesos, dropType, x, y, ownerId, ownerPartyId, dropTime, dropperId, dropperX, dropperY, playerDrop, mod)
+	drop2.Producer(d.l, context.Background()).Emit(worldId, channelId, mapId, drop)
+}
+
 func (d *processor) CancelDropReservation(dropId uint32, characterId uint32) {
 	drop2.GetRegistry().CancelDropReservation(dropId, characterId)
 	reservation.Producer(d.l, context.Background()).EmitFailure(dropId, characterId)
