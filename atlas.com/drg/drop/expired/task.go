@@ -3,6 +3,7 @@ package expired
 import (
 	registries "atlas-drg/configuration"
 	"atlas-drg/drop"
+	"atlas-drg/equipment"
 	"context"
 	"log"
 	"time"
@@ -31,7 +32,19 @@ func (r *DropExpiration) Run() {
 	for _, d := range ds {
 		if d.Status() == "AVAILABLE" {
 			if d.DropTime()+expire < uint64(time.Now().UnixNano()/int64(time.Millisecond)) {
-				drop.GetRegistry().RemoveDrop(d.Id())
+				_, err := drop.GetRegistry().RemoveDrop(d.Id())
+				if err != nil {
+					r.l.Printf("Unable to remove drop from registry.")
+					continue
+				}
+
+				if d.EquipmentId() != 0 {
+					err := equipment.Delete(d.EquipmentId())
+					if err != nil {
+						r.l.Printf("Generating equipment item %d for character %d, they were not awarded this item. Check request in ESO service.")
+						return
+					}
+				}
 				Producer(r.l, context.Background()).Emit(d.WorldId(), d.ChannelId(), d.MapId(), d.Id())
 			}
 		}

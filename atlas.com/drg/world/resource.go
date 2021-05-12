@@ -35,6 +35,7 @@ func GetDropsInMap(l *log.Logger) http.HandlerFunc {
 					ChannelId:       d.ChannelId(),
 					MapId:           d.MapId(),
 					ItemId:          d.ItemId(),
+					EquipmentId:     d.EquipmentId(),
 					Quantity:        d.Quantity(),
 					Meso:            d.Meso(),
 					DropType:        d.Type(),

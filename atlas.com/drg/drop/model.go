@@ -6,6 +6,7 @@ type Drop struct {
 	channelId    byte
 	mapId        uint32
 	itemId       uint32
+	equipmentId  uint32
 	quantity     uint32
 	meso         uint32
 	dropType     byte
@@ -93,6 +94,7 @@ func (d Drop) CancelReservation() Drop {
 		channelId:    d.channelId,
 		mapId:        d.mapId,
 		itemId:       d.itemId,
+		equipmentId:  d.equipmentId,
 		quantity:     d.quantity,
 		meso:         d.meso,
 		dropType:     d.dropType,
@@ -117,6 +119,7 @@ func (d Drop) Reserve() Drop {
 		channelId:    d.channelId,
 		mapId:        d.mapId,
 		itemId:       d.itemId,
+		equipmentId:  d.equipmentId,
 		quantity:     d.quantity,
 		meso:         d.meso,
 		dropType:     d.dropType,
@@ -148,4 +151,8 @@ func (d Drop) ChannelId() byte {
 
 func (d Drop) CharacterDrop() bool {
 	return d.playerDrop
+}
+
+func (d Drop) EquipmentId() uint32 {
+	return d.equipmentId
 }

@@ -39,7 +39,7 @@ type mapKey struct {
 	mapId     uint32
 }
 
-func (d *dropRegistry) CreateDrop(worldId byte, channelId byte, mapId uint32, itemId uint32, quantity uint32,
+func (d *dropRegistry) CreateDrop(worldId byte, channelId byte, mapId uint32, itemId uint32, equipmentId uint32, quantity uint32,
 	mesos uint32, theType byte, x int16, y int16, ownerId uint32, ownerPartyId uint32, dropTime uint64, dropperId uint32,
 	dropperX int16, dropperY int16, playerDrop bool, mod byte) Drop {
 
@@ -76,6 +76,7 @@ func (d *dropRegistry) CreateDrop(worldId byte, channelId byte, mapId uint32, it
 		channelId:    channelId,
 		mapId:        mapId,
 		itemId:       itemId,
+		equipmentId:  equipmentId,
 		quantity:     quantity,
 		meso:         mesos,
 		dropType:     theType,

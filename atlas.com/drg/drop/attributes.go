@@ -19,6 +19,7 @@ type DropAttributes struct {
 	ChannelId       byte   `json:"channelId"`
 	MapId           uint32 `json:"mapId"`
 	ItemId          uint32 `json:"itemId"`
+	EquipmentId     uint32 `json:"equipmentId"`
 	Quantity        uint32 `json:"quantity"`
 	Meso            uint32 `json:"meso"`
 	DropType        byte   `json:"dropType"`

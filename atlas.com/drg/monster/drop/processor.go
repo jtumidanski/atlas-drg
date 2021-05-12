@@ -4,8 +4,11 @@ import (
 	drop2 "atlas-drg/drop"
 	"atlas-drg/drop/gathered"
 	"atlas-drg/drop/reservation"
+	"atlas-drg/equipment"
+	"atlas-drg/inventory"
 	"context"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -21,7 +24,23 @@ func (d *processor) SpawnDrop(worldId byte, channelId byte, mapId uint32, itemId
 	mesos uint32, dropType byte, x int16, y int16, ownerId uint32, ownerPartyId uint32, dropperId uint32,
 	dropperX int16, dropperY int16, playerDrop bool, mod byte) {
 	dropTime := uint64(time.Now().UnixNano() / int64(time.Millisecond))
-	drop := drop2.GetRegistry().CreateDrop(worldId, channelId, mapId, itemId, quantity, mesos, dropType, x, y, ownerId, ownerPartyId, dropTime, dropperId, dropperX, dropperY, playerDrop, mod)
+	it, _ := inventory.GetInventoryType(itemId)
+	var equipmentId uint32
+	if it == inventory.TypeValueEquip {
+		ro, err := equipment.Create(itemId)
+		if err != nil {
+			d.l.Printf("Generating equipment item %d for character %d, they were not awarded this item. Check request in ESO service.")
+			return
+		}
+		eid, err := strconv.Atoi(ro.Data.Id)
+		if err != nil {
+			d.l.Printf("Generating equipment item %d for character %d, they were not awarded this item. Invalid ID from ESO service.")
+			return
+		}
+		equipmentId = uint32(eid)
+	}
+
+	drop := drop2.GetRegistry().CreateDrop(worldId, channelId, mapId, itemId, equipmentId, quantity, mesos, dropType, x, y, ownerId, ownerPartyId, dropTime, dropperId, dropperX, dropperY, playerDrop, mod)
 	drop2.Producer(d.l, context.Background()).Emit(worldId, channelId, mapId, drop)
 }
 
