@@ -27,7 +27,7 @@ func (d *processor) SpawnDrop(worldId byte, channelId byte, mapId uint32, itemId
 	it, _ := inventory.GetInventoryType(itemId)
 	var equipmentId uint32
 	if it == inventory.TypeValueEquip {
-		ro, err := equipment.Create(itemId)
+		ro, err := equipment.CreateRandom(itemId)
 		if err != nil {
 			d.l.Printf("Generating equipment item %d for character %d, they were not awarded this item. Check request in ESO service.")
 			return

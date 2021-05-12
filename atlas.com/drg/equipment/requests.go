@@ -6,13 +6,14 @@ import (
 )
 
 const (
-	equipmentServicePrefix string = "/ms/eso/"
-	equipmentService              = requests.BaseRequest + equipmentServicePrefix
-	equipmentResource             = equipmentService + "equipment"
-	equipResource                 = equipmentResource + "/%d"
+	equipmentServicePrefix  string = "/ms/eso/"
+	equipmentService               = requests.BaseRequest + equipmentServicePrefix
+	equipmentResource              = equipmentService + "equipment"
+	randomEquipmentResource        = equipmentService + "equipment?random=true"
+	equipResource                  = equipmentResource + "/%d"
 )
 
-func Create(itemId uint32) (*DataContainer, error) {
+func CreateRandom(itemId uint32) (*DataContainer, error) {
 	input := &DataContainer{
 		Data: DataBody{
 			Id:   "0",
@@ -21,7 +22,7 @@ func Create(itemId uint32) (*DataContainer, error) {
 				ItemId: itemId,
 			},
 		}}
-	resp, err := requests.Post(fmt.Sprintf(equipmentResource), input)
+	resp, err := requests.Post(fmt.Sprintf(randomEquipmentResource), input)
 	if err != nil {
 		return nil, err
 	}
