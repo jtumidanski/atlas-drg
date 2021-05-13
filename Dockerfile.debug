@@ -11,7 +11,7 @@ ENV CGO_ENABLED 0
 # either manually or with a tool like "godep".)
 RUN apk add --no-cache git
 
-RUN go get github.com/derekparker/delve/cmd/dlv
+RUN go get github.com/go-delve/delve/cmd/dlv
 
 ADD ./atlas.com/drg /atlas.com/drg
 WORKDIR /atlas.com/drg

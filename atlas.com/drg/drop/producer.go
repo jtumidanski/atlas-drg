@@ -49,7 +49,7 @@ func DropEvent(l logrus.FieldLogger) func(worldId byte, channelId byte, mapId ui
 			PlayerDrop:      drop.PlayerDrop(),
 			Mod:             drop.Mod(),
 		}
-		l.Infof("Dropping item %d in map %d.", drop.ItemId(), drop.MapId())
+		l.Debugf("Dropping item %d in map %d.", drop.ItemId(), drop.MapId())
 		producer(producer2.CreateKey(int(mapId)), e)
 	}
 }

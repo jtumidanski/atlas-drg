@@ -28,12 +28,12 @@ func (d *processor) SpawnDrop(worldId byte, channelId byte, mapId uint32, itemId
 	if it == inventory.TypeValueEquip {
 		ro, err := equipment.CreateRandom(itemId)
 		if err != nil {
-			d.l.Infof("Generating equipment item %d for character %d, they were not awarded this item. Check request in ESO service.")
+			d.l.Debugf("Generating equipment item %d for character %d, they were not awarded this item. Check request in ESO service.")
 			return
 		}
 		eid, err := strconv.Atoi(ro.Data.Id)
 		if err != nil {
-			d.l.Infof("Generating equipment item %d for character %d, they were not awarded this item. Invalid ID from ESO service.")
+			d.l.Debugf("Generating equipment item %d for character %d, they were not awarded this item. Invalid ID from ESO service.")
 			return
 		}
 		equipmentId = uint32(eid)
@@ -59,10 +59,10 @@ func (d *processor) CancelDropReservation(dropId uint32, characterId uint32) {
 func (d *processor) ReserveDrop(dropId uint32, characterId uint32) {
 	err := drop2.GetRegistry().ReserveDrop(dropId, characterId)
 	if err == nil {
-		d.l.Infof("Reserving %d for %d.", dropId, characterId)
+		d.l.Debugf("Reserving %d for %d.", dropId, characterId)
 		reservation.DropReservationSuccess(d.l)(dropId, characterId)
 	} else {
-		d.l.Infof("Failed reserving %d for %d.", dropId, characterId)
+		d.l.Debugf("Failed reserving %d for %d.", dropId, characterId)
 		reservation.DropReservationFailure(d.l)(dropId, characterId)
 	}
 }
@@ -70,7 +70,7 @@ func (d *processor) ReserveDrop(dropId uint32, characterId uint32) {
 func (d *processor) GatherDrop(dropId uint32, characterId uint32) {
 	drop, err := drop2.GetRegistry().RemoveDrop(dropId)
 	if err == nil {
-		d.l.Infof("Gathering %d for %d.", dropId, characterId)
+		d.l.Debugf("Gathering %d for %d.", dropId, characterId)
 		gathered.DropPickedUp(d.l)(dropId, characterId, drop.MapId())
 	}
 }
