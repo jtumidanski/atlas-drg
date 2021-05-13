@@ -1,9 +1,9 @@
 package spawn
 
 import (
-	"atlas-drg/kafka/consumer"
+	"atlas-drg/kafka/handler"
 	"atlas-drg/monster/drop"
-	"log"
+	"github.com/sirupsen/logrus"
 )
 
 type command struct {
@@ -25,20 +25,20 @@ type command struct {
 	Mod          byte   `json:"mod"`
 }
 
-func CommandEventCreator() consumer.EmptyEventCreator {
+func CommandEventCreator() handler.EmptyEventCreator {
 	return func() interface{} {
 		return &command{}
 	}
 }
 
-func HandleCommand() consumer.EventProcessor {
-	return func(l *log.Logger, e interface{}) {
+func HandleCommand() handler.EventHandler {
+	return func(l logrus.FieldLogger, e interface{}) {
 		if event, ok := e.(*command); ok {
 			drop.Processor(l).SpawnDrop(event.WorldId, event.ChannelId, event.MapId, event.ItemId, event.Quantity,
 				event.Mesos, event.DropType, event.X, event.Y, event.OwnerId, event.OwnerPartyId, event.DropperId,
 				event.DropperX, event.DropperY, event.PlayerDrop, event.Mod)
 		} else {
-			l.Printf("[ERROR] unable to cast event provided to handler [command]")
+			l.Errorf("Unable to cast event provided to handler.")
 		}
 	}
 }

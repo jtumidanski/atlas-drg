@@ -1,4 +1,4 @@
-package producer
+package producers
 
 import (
 	"atlas-drg/retry"
@@ -7,7 +7,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"github.com/segmentio/kafka-go"
-	"log"
+	"github.com/sirupsen/logrus"
 	"os"
 	"time"
 )
@@ -18,38 +18,37 @@ func CreateKey(key int) []byte {
 	return b
 }
 
-func ProduceEvent(l *log.Logger, topicToken string, key []byte, event interface{}) {
-	td, err := topic.TopicRequests(l).GetTopic(topicToken)
-	if err != nil {
-		l.Fatal("[ERROR] unable to retrieve topic %s for producer.", topicToken)
-	}
-
+func ProduceEvent(l logrus.FieldLogger, topicToken string) func(key []byte, event interface{}) {
+	name := topic.GetRegistry().Get(l, topicToken)
 	w := &kafka.Writer{
 		Addr:         kafka.TCP(os.Getenv("BOOTSTRAP_SERVERS")),
-		Topic:        td.Attributes.Name,
+		Topic:        name,
 		Balancer:     &kafka.LeastBytes{},
 		BatchTimeout: 50 * time.Millisecond,
 	}
 
-	r, err := json.Marshal(event)
-	if err != nil {
-		l.Fatal("[ERROR] unable to marshall event for topic %s with reason %s", td.Attributes.Name, err.Error())
-	}
-
-	writeMessage := func(attempt int) (bool, error) {
-		err = w.WriteMessages(context.Background(), kafka.Message{
-			Key:   key,
-			Value: r,
-		})
+	return func(key []byte, event interface{}) {
+		r, err := json.Marshal(event)
+		l.WithField("message", string(r)).Debugf("Writing message to topic %s.", name)
 		if err != nil {
-			l.Printf("[WARN] unable to emit event on topic %s, will retry.", td.Attributes.Name)
-			return true, err
+			l.WithError(err).Fatalf("Unable to marshall event for topic %s.", name)
 		}
-		return false, err
-	}
 
-	err = retry.Retry(writeMessage, 10)
-	if err != nil {
-		l.Fatalf("[ERROR] unable to emit event on topic %s, with reason %s", td.Attributes.Name, err.Error())
+		writeMessage := func(attempt int) (bool, error) {
+			err = w.WriteMessages(context.Background(), kafka.Message{
+				Key:   key,
+				Value: r,
+			})
+			if err != nil {
+				l.Warnf("Unable to emit event on topic %s, will retry.", name)
+				return true, err
+			}
+			return false, err
+		}
+
+		err = retry.Try(writeMessage, 10)
+		if err != nil {
+			l.WithError(err).Fatalf("Unable to emit event on topic %s.", name)
+		}
 	}
 }

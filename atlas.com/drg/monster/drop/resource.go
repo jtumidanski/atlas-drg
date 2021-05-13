@@ -4,7 +4,7 @@ import (
 	"atlas-drg/drop"
 	"atlas-drg/json"
 	"github.com/gorilla/mux"
-	"log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 )
@@ -14,9 +14,10 @@ type GenericError struct {
 	Message string `json:"message"`
 }
 
-func GetDropById(l *log.Logger) http.HandlerFunc {
+func GetDropById(fl *logrus.Logger) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		dropId := getDropId(r)
+		l := fl.WithFields(logrus.Fields{"originator": "GetDropById", "type": "rest_handler"})
+		dropId := getDropId(l)(r)
 		d, err := Processor(l).GetDropById(dropId)
 		if err != nil {
 			rw.WriteHeader(http.StatusNotFound)
@@ -54,12 +55,14 @@ func GetDropById(l *log.Logger) http.HandlerFunc {
 	}
 }
 
-func getDropId(r *http.Request) uint32 {
-	vars := mux.Vars(r)
-	value, err := strconv.ParseUint(vars["id"], 10, 32)
-	if err != nil {
-		log.Println("Error parsing id as integer")
-		return 0
+func getDropId(l logrus.FieldLogger) func(r *http.Request) uint32 {
+	return func(r *http.Request) uint32 {
+		vars := mux.Vars(r)
+		value, err := strconv.ParseUint(vars["id"], 10, 32)
+		if err != nil {
+			l.WithError(err).Errorf("Error parsing id as integer")
+			return 0
+		}
+		return uint32(value)
 	}
-	return uint32(value)
 }

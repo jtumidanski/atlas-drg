@@ -6,18 +6,17 @@ import (
 	"atlas-drg/drop/reservation"
 	"atlas-drg/equipment"
 	"atlas-drg/inventory"
-	"context"
-	"log"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"time"
 )
 
-var Processor = func(l *log.Logger) *processor {
+var Processor = func(l logrus.FieldLogger) *processor {
 	return &processor{l: l}
 }
 
 type processor struct {
-	l *log.Logger
+	l logrus.FieldLogger
 }
 
 func (d *processor) SpawnDrop(worldId byte, channelId byte, mapId uint32, itemId uint32, quantity uint32,
@@ -29,19 +28,19 @@ func (d *processor) SpawnDrop(worldId byte, channelId byte, mapId uint32, itemId
 	if it == inventory.TypeValueEquip {
 		ro, err := equipment.CreateRandom(itemId)
 		if err != nil {
-			d.l.Printf("Generating equipment item %d for character %d, they were not awarded this item. Check request in ESO service.")
+			d.l.Infof("Generating equipment item %d for character %d, they were not awarded this item. Check request in ESO service.")
 			return
 		}
 		eid, err := strconv.Atoi(ro.Data.Id)
 		if err != nil {
-			d.l.Printf("Generating equipment item %d for character %d, they were not awarded this item. Invalid ID from ESO service.")
+			d.l.Infof("Generating equipment item %d for character %d, they were not awarded this item. Invalid ID from ESO service.")
 			return
 		}
 		equipmentId = uint32(eid)
 	}
 
 	drop := drop2.GetRegistry().CreateDrop(worldId, channelId, mapId, itemId, equipmentId, quantity, mesos, dropType, x, y, ownerId, ownerPartyId, dropTime, dropperId, dropperX, dropperY, playerDrop, mod)
-	drop2.Producer(d.l, context.Background()).Emit(worldId, channelId, mapId, drop)
+	drop2.DropEvent(d.l)(worldId, channelId, mapId, drop)
 }
 
 func (d *processor) SpawnCharacterDrop(worldId byte, channelId byte, mapId uint32, itemId uint32, equipmentId uint32, quantity uint32,
@@ -49,30 +48,30 @@ func (d *processor) SpawnCharacterDrop(worldId byte, channelId byte, mapId uint3
 	dropperX int16, dropperY int16, playerDrop bool, mod byte) {
 	dropTime := uint64(time.Now().UnixNano() / int64(time.Millisecond))
 	drop := drop2.GetRegistry().CreateDrop(worldId, channelId, mapId, itemId, equipmentId, quantity, mesos, dropType, x, y, ownerId, ownerPartyId, dropTime, dropperId, dropperX, dropperY, playerDrop, mod)
-	drop2.Producer(d.l, context.Background()).Emit(worldId, channelId, mapId, drop)
+	drop2.DropEvent(d.l)(worldId, channelId, mapId, drop)
 }
 
 func (d *processor) CancelDropReservation(dropId uint32, characterId uint32) {
 	drop2.GetRegistry().CancelDropReservation(dropId, characterId)
-	reservation.Producer(d.l, context.Background()).EmitFailure(dropId, characterId)
+	reservation.DropReservationFailure(d.l)(dropId, characterId)
 }
 
 func (d *processor) ReserveDrop(dropId uint32, characterId uint32) {
 	err := drop2.GetRegistry().ReserveDrop(dropId, characterId)
 	if err == nil {
-		d.l.Printf("[INFO] reserving %d for %d.", dropId, characterId)
-		reservation.Producer(d.l, context.Background()).EmitSuccess(dropId, characterId)
+		d.l.Infof("Reserving %d for %d.", dropId, characterId)
+		reservation.DropReservationSuccess(d.l)(dropId, characterId)
 	} else {
-		d.l.Printf("[INFO] failed reserving %d for %d.", dropId, characterId)
-		reservation.Producer(d.l, context.Background()).EmitFailure(dropId, characterId)
+		d.l.Infof("Failed reserving %d for %d.", dropId, characterId)
+		reservation.DropReservationFailure(d.l)(dropId, characterId)
 	}
 }
 
 func (d *processor) GatherDrop(dropId uint32, characterId uint32) {
 	drop, err := drop2.GetRegistry().RemoveDrop(dropId)
 	if err == nil {
-		d.l.Printf("[INFO] gathering %d for %d.", dropId, characterId)
-		gathered.Producer(d.l, context.Background()).Emit(dropId, characterId, drop.MapId())
+		d.l.Infof("Gathering %d for %d.", dropId, characterId)
+		gathered.DropPickedUp(d.l)(dropId, characterId, drop.MapId())
 	}
 }
 
