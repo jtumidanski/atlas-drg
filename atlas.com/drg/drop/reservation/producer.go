@@ -30,6 +30,6 @@ func emitReservation(producer func(key []byte, event interface{}), characterId u
 func DropReservationSuccess(l logrus.FieldLogger) func(dropId uint32, characterId uint32) {
 	producer := producer2.ProduceEvent(l, "TOPIC_DROP_RESERVATION_EVENT")
 	return func(dropId uint32, characterId uint32) {
-		emitReservation(producer, dropId, characterId, "SUCCESS")
+		emitReservation(producer, characterId, dropId, "SUCCESS")
 	}
 }
