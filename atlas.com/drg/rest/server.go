@@ -21,7 +21,7 @@ func NewServer(l *logrus.Logger) *Server {
 	router.Use(commonHeader)
 
 	sRouter := router.PathPrefix("/drops/{id}").Subrouter()
-	sRouter.HandleFunc("", drop2.GetDropById(l))
+	sRouter.HandleFunc("", drop2.HandleGetDropById(l))
 
 	iRouter := router.PathPrefix("/worlds/{worldId}/channels/{channelId}/maps/{mapId}/drops").Subrouter()
 	iRouter.HandleFunc("", world.GetDropsInMap(l))

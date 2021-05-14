@@ -20,7 +20,7 @@ func CancelDropReservationCommandCreator() handler.EmptyEventCreator {
 func HandleCancelDropReservationCommand() handler.EventHandler {
 	return func(l logrus.FieldLogger, e interface{}) {
 		if event, ok := e.(*CancelDropReservationCommand); ok {
-			drop.Processor(l).CancelDropReservation(event.DropId, event.CharacterId)
+			drop.CancelDropReservation(l)(event.DropId, event.CharacterId)
 		} else {
 			l.Errorf("Unable to cast event provided to handler.")
 		}

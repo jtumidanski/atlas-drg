@@ -14,11 +14,11 @@ type GenericError struct {
 	Message string `json:"message"`
 }
 
-func GetDropById(fl *logrus.Logger) http.HandlerFunc {
+func HandleGetDropById(fl *logrus.Logger) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		l := fl.WithFields(logrus.Fields{"originator": "GetDropById", "type": "rest_handler"})
 		dropId := getDropId(l)(r)
-		d, err := Processor(l).GetDropById(dropId)
+		d, err := GetDropById(dropId)
 		if err != nil {
 			rw.WriteHeader(http.StatusNotFound)
 			json.ToJSON(&GenericError{Message: err.Error()}, rw)

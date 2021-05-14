@@ -22,7 +22,7 @@ func GetDropsInMap(fl *logrus.Logger) http.HandlerFunc {
 		cid := getChannelId(l)(r)
 		mid := getMapId(l)(r)
 
-		ds, _ := drop.Processor(l).GetDropsForMap(wid, cid, mid)
+		ds, _ := drop.GetDropsForMap(wid, cid, mid)
 		rw.WriteHeader(http.StatusOK)
 		result := drop2.DropDataListContainer{}
 		result.Data = make([]drop2.DropData, 0)

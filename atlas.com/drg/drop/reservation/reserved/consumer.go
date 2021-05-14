@@ -20,7 +20,7 @@ func ReserveDropCommandCreator() handler.EmptyEventCreator {
 func HandleReserveDropCommand() handler.EventHandler {
 	return func(l logrus.FieldLogger, e interface{}) {
 		if event, ok := e.(*ReserveDropCommand); ok {
-			drop.Processor(l).ReserveDrop(event.DropId, event.CharacterId)
+			drop.ReserveDrop(l)(event.DropId, event.CharacterId)
 		} else {
 			l.Errorf("Unable to cast event provided to handler.")
 		}

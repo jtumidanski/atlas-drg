@@ -35,7 +35,7 @@ func CommandEventCreator() handler.EmptyEventCreator {
 func HandleCommand() handler.EventHandler {
 	return func(l logrus.FieldLogger, e interface{}) {
 		if event, ok := e.(*command); ok {
-			drop.Processor(l).SpawnCharacterDrop(event.WorldId, event.ChannelId, event.MapId, event.ItemId, event.EquipmentId, event.Quantity,
+			drop.SpawnCharacterDrop(l)(event.WorldId, event.ChannelId, event.MapId, event.ItemId, event.EquipmentId, event.Quantity,
 				event.Mesos, event.DropType, event.X, event.Y, event.OwnerId, event.OwnerPartyId, event.DropperId,
 				event.DropperX, event.DropperY, event.PlayerDrop, event.Mod)
 		} else {

@@ -20,7 +20,7 @@ func GatherDropCommandCreator() handler.EmptyEventCreator {
 func HandleGatherDropCommand() handler.EventHandler {
 	return func(l logrus.FieldLogger, e interface{}) {
 		if event, ok := e.(*GatherDropCommand); ok {
-			drop.Processor(l).GatherDrop(event.DropId, event.CharacterId)
+			drop.GatherDrop(l)(event.DropId, event.CharacterId)
 		} else {
 			l.Errorf("Unable to cast event provided to handler.")
 		}
