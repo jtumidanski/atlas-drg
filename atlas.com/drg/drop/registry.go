@@ -6,12 +6,15 @@ import (
 )
 
 type dropRegistry struct {
-	mutex            sync.Mutex
-	dropMap          map[uint32]Drop
-	dropLocks        map[uint32]*sync.Mutex
-	mapLocks         map[mapKey]*sync.Mutex
-	dropsInMap       map[mapKey][]uint32
+	adminMutex sync.RWMutex
+
+	dropMap          map[uint32]*Drop
 	dropReservations map[uint32]uint32
+
+	dropLocks map[uint32]*sync.Mutex
+
+	mapLocks   map[mapKey]*sync.Mutex
+	dropsInMap map[mapKey][]uint32
 }
 
 var registry *dropRegistry
@@ -22,8 +25,8 @@ var uniqueId = uint32(1000000001)
 func GetRegistry() *dropRegistry {
 	once.Do(func() {
 		registry = &dropRegistry{
-			mutex:            sync.Mutex{},
-			dropMap:          make(map[uint32]Drop),
+			adminMutex:       sync.RWMutex{},
+			dropMap:          make(map[uint32]*Drop),
 			dropLocks:        make(map[uint32]*sync.Mutex),
 			mapLocks:         make(map[mapKey]*sync.Mutex),
 			dropsInMap:       make(map[mapKey][]uint32),
@@ -41,7 +44,7 @@ type mapKey struct {
 
 func (d *dropRegistry) CreateDrop(worldId byte, channelId byte, mapId uint32, itemId uint32, equipmentId uint32, quantity uint32,
 	mesos uint32, theType byte, x int16, y int16, ownerId uint32, ownerPartyId uint32, dropTime uint64, dropperId uint32,
-	dropperX int16, dropperY int16, playerDrop bool, mod byte) Drop {
+	dropperX int16, dropperY int16, playerDrop bool, mod byte) *Drop {
 
 	mk := mapKey{
 		worldId:   worldId,
@@ -49,7 +52,7 @@ func (d *dropRegistry) CreateDrop(worldId byte, channelId byte, mapId uint32, it
 		mapId:     mapId,
 	}
 
-	d.mutex.Lock()
+	d.adminMutex.Lock()
 	ids := existingIds(d.dropMap)
 	currentUniqueId := uniqueId
 	for contains(ids, currentUniqueId) {
@@ -59,18 +62,8 @@ func (d *dropRegistry) CreateDrop(worldId byte, channelId byte, mapId uint32, it
 		}
 		uniqueId = currentUniqueId
 	}
-	dropMutex := sync.Mutex{}
-	d.dropLocks[currentUniqueId] = &dropMutex
 
-	if _, ok := d.mapLocks[mk]; !ok {
-		mapMutex := sync.Mutex{}
-		d.mapLocks[mk] = &mapMutex
-	}
-
-	d.mutex.Unlock()
-
-	dropMutex.Lock()
-	drop := Drop{
+	drop := &Drop{
 		id:           currentUniqueId,
 		worldId:      worldId,
 		channelId:    channelId,
@@ -94,147 +87,185 @@ func (d *dropRegistry) CreateDrop(worldId byte, channelId byte, mapId uint32, it
 	}
 
 	d.dropMap[drop.Id()] = drop
-	if lock, ok := d.mapLocks[mk]; ok {
-		lock.Lock()
-		d.dropsInMap[mk] = append(d.dropsInMap[mk], drop.Id())
-		lock.Unlock()
-	}
-	dropMutex.Unlock()
+	d.adminMutex.Unlock()
+
+	d.lockDrop(currentUniqueId)
+	d.lockMap(mk)
+	d.dropsInMap[mk] = append(d.dropsInMap[mk], drop.Id())
+	d.unlockMap(mk)
+	d.unlockDrop(currentUniqueId)
 	return drop
 }
 
-func (d *dropRegistry) CancelDropReservation(dropId uint32, characterId uint32) {
-	if lock, ok := d.dropLocks[dropId]; ok {
+func (d *dropRegistry) lockMap(mk mapKey) {
+	if lock, ok := d.mapLocks[mk]; ok {
 		lock.Lock()
+	} else {
+		d.adminMutex.Lock()
+		mapMutex := sync.Mutex{}
+		d.mapLocks[mk] = &mapMutex
+		mapMutex.Lock()
+		d.adminMutex.Unlock()
+	}
+}
 
-		if _, ok := d.dropMap[dropId]; !ok {
-			lock.Unlock()
-			return
-		}
-		if val, ok := d.dropReservations[dropId]; ok {
-			if val != characterId {
-				lock.Unlock()
-				return
-			}
-		} else {
-			lock.Unlock()
-			return
-		}
-
-		drop := d.dropMap[dropId]
-		if drop.Status() != "RESERVED" {
-			lock.Unlock()
-			return
-		}
-
-		drop = drop.CancelReservation()
-		d.dropMap[dropId] = drop
-		delete(d.dropReservations, dropId)
+func (d *dropRegistry) unlockMap(mk mapKey) {
+	if lock, ok := d.mapLocks[mk]; ok {
 		lock.Unlock()
 	}
 }
 
-func (d *dropRegistry) ReserveDrop(dropId uint32, characterId uint32) error {
+func (d *dropRegistry) lockDrop(dropId uint32) {
 	if lock, ok := d.dropLocks[dropId]; ok {
 		lock.Lock()
-		if _, ok := d.dropMap[dropId]; !ok {
-			lock.Unlock()
-			return errors.New("unable to locate drop")
-		}
+	} else {
+		d.adminMutex.Lock()
+		dropMutex := sync.Mutex{}
+		d.dropLocks[dropId] = &dropMutex
+		dropMutex.Lock()
+		d.adminMutex.Unlock()
+	}
+}
 
-		drop := d.dropMap[dropId]
-		if drop.Status() == "AVAILABLE" {
-			drop = drop.Reserve()
-			d.dropMap[dropId] = drop
-			d.dropReservations[dropId] = characterId
-			lock.Unlock()
-			return nil
-		} else {
-			if locker, ok := d.dropReservations[dropId]; ok && locker == characterId {
-				lock.Unlock()
-				return nil
-			} else {
-				lock.Unlock()
-				return errors.New("reserved by another party")
-			}
+func (d *dropRegistry) unlockDrop(dropId uint32) {
+	if lock, ok := d.dropLocks[dropId]; ok {
+		lock.Unlock()
+	}
+}
+
+func (d *dropRegistry) getDrop(dropId uint32) (*Drop, bool) {
+	var drop *Drop
+	var ok bool
+	d.adminMutex.RLock()
+	drop, ok = d.dropMap[dropId]
+	d.adminMutex.RUnlock()
+	return drop, ok
+}
+
+func (d *dropRegistry) CancelDropReservation(dropId uint32, characterId uint32) {
+	d.lockDrop(dropId)
+
+	drop, ok := d.getDrop(dropId)
+	if !ok {
+		d.unlockDrop(dropId)
+		return
+	}
+
+	if val, ok := d.dropReservations[dropId]; ok {
+		if val != characterId {
+			d.unlockDrop(dropId)
+			return
 		}
 	} else {
-		return errors.New("unable to lock drop")
+		d.unlockDrop(dropId)
+		return
+	}
+
+	if drop.Status() != "RESERVED" {
+		d.unlockDrop(dropId)
+		return
+	}
+
+	drop.CancelReservation()
+	delete(d.dropReservations, dropId)
+	d.unlockDrop(dropId)
+}
+
+func (d *dropRegistry) ReserveDrop(dropId uint32, characterId uint32) error {
+	d.lockDrop(dropId)
+
+	drop, ok := d.getDrop(dropId)
+
+	if !ok {
+		d.unlockDrop(dropId)
+		return errors.New("unable to locate drop")
+	}
+
+	if drop.Status() == "AVAILABLE" {
+		drop.Reserve()
+		d.dropReservations[dropId] = characterId
+		d.unlockDrop(dropId)
+		return nil
+	} else {
+		if locker, ok := d.dropReservations[dropId]; ok && locker == characterId {
+			d.unlockDrop(dropId)
+			return nil
+		} else {
+			d.unlockDrop(dropId)
+			return errors.New("reserved by another party")
+		}
 	}
 }
 
 func (d *dropRegistry) RemoveDrop(dropId uint32) (*Drop, error) {
-	var drop Drop
-	if lock, ok := d.dropLocks[dropId]; ok {
-		lock.Lock()
-		if drop, ok = d.dropMap[dropId]; ok {
-			delete(d.dropMap, dropId)
-			mk := mapKey{
-				worldId:   drop.WorldId(),
-				channelId: drop.ChannelId(),
-				mapId:     drop.MapId(),
-			}
-			if mapLock, ok := d.mapLocks[mk]; ok {
-				mapLock.Lock()
-				if _, ok := d.dropsInMap[mk]; ok {
-					index := indexOf(dropId, d.dropsInMap[mk])
-					if index >= 0 && index < len(d.dropsInMap[mk]) {
-						d.dropsInMap[mk] = remove(d.dropsInMap[mk], index)
-					}
-				}
-				mapLock.Unlock()
-			}
-		}
-		delete(d.dropReservations, dropId)
-		lock.Unlock()
+	var drop *Drop
+	d.lockDrop(dropId)
+
+	drop, ok := d.getDrop(dropId)
+	if !ok {
+		d.unlockDrop(dropId)
+		return nil, nil
 	}
-	return &drop, nil
+
+	d.adminMutex.Lock()
+	delete(d.dropMap, dropId)
+	delete(d.dropReservations, dropId)
+	d.adminMutex.Unlock()
+
+	mk := mapKey{
+		worldId:   drop.WorldId(),
+		channelId: drop.ChannelId(),
+		mapId:     drop.MapId(),
+	}
+
+	d.lockMap(mk)
+	if _, ok := d.dropsInMap[mk]; ok {
+		index := indexOf(dropId, d.dropsInMap[mk])
+		if index >= 0 && index < len(d.dropsInMap[mk]) {
+			d.dropsInMap[mk] = remove(d.dropsInMap[mk], index)
+		}
+	}
+	d.unlockMap(mk)
+
+	d.unlockDrop(dropId)
+	return drop, nil
 }
 
 func (d *dropRegistry) GetDrop(dropId uint32) (*Drop, error) {
-	if lock, ok := d.dropLocks[dropId]; ok {
-		lock.Lock()
-		if drop, ok := d.dropMap[dropId]; ok {
-			lock.Unlock()
-			return &drop, nil
-		} else {
-			lock.Unlock()
-			return nil, errors.New("drop not found")
-		}
+	d.lockDrop(dropId)
+	drop, ok := d.getDrop(dropId)
+	if !ok {
+		d.unlockDrop(dropId)
+		return nil, errors.New("drop not found")
 	}
-	return nil, errors.New("drop lock not found")
+	d.unlockDrop(dropId)
+	return drop, nil
 }
 
-func (d *dropRegistry) GetDropsForMap(worldId byte, channelId byte, mapId uint32) ([]Drop, error) {
-	mk := mapKey{
-		worldId:   worldId,
-		channelId: channelId,
-		mapId:     mapId,
-	}
-
-	if mapLock, ok := d.mapLocks[mk]; ok {
-		var drops []Drop
-		mapLock.Lock()
-		for _, dropId := range d.dropsInMap[mk] {
-			if drop, ok := d.dropMap[dropId]; ok {
-				drops = append(drops, drop)
-			}
+func (d *dropRegistry) GetDropsForMap(worldId byte, channelId byte, mapId uint32) ([]*Drop, error) {
+	mk := mapKey{worldId: worldId, channelId: channelId, mapId: mapId}
+	drops := make([]*Drop, 0)
+	d.lockMap(mk)
+	for _, dropId := range d.dropsInMap[mk] {
+		if drop, ok := d.getDrop(dropId); ok {
+			drops = append(drops, drop)
 		}
-		mapLock.Unlock()
-		return drops, nil
 	}
-	return nil, errors.New("map lock not found")
+	d.unlockMap(mk)
+	return drops, nil
 }
 
-func (d *dropRegistry) GetAllDrops() []Drop {
-	var drops []Drop
+func (d *dropRegistry) GetAllDrops() []*Drop {
+	var drops []*Drop
+	d.adminMutex.RLock()
 	for _, drop := range d.dropMap {
 		drops = append(drops, drop)
 	}
+	d.adminMutex.RUnlock()
 	return drops
 }
 
-func existingIds(drops map[uint32]Drop) []uint32 {
+func existingIds(drops map[uint32]*Drop) []uint32 {
 	var ids []uint32
 	for i := range drops {
 		ids = append(ids, i)

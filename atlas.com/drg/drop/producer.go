@@ -26,9 +26,9 @@ type dropEvent struct {
 	Mod             byte   `json:"mod"`
 }
 
-func DropEvent(l logrus.FieldLogger) func(worldId byte, channelId byte, mapId uint32, drop Drop) {
+func DropEvent(l logrus.FieldLogger) func(worldId byte, channelId byte, mapId uint32, drop *Drop) {
 	producer := producer2.ProduceEvent(l, "TOPIC_DROP_EVENT")
-	return func(worldId byte, channelId byte, mapId uint32, drop Drop) {
+	return func(worldId byte, channelId byte, mapId uint32, drop *Drop) {
 		e := &dropEvent{
 			WorldId:         worldId,
 			ChannelId:       channelId,

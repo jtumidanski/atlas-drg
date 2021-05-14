@@ -34,7 +34,7 @@ func main() {
 }
 
 func destroyDrop(l logrus.FieldLogger) drop.DropOperator {
-	return func(d drop.Drop) {
+	return func(d *drop.Drop) {
 		drop.GetRegistry().RemoveDrop(d.Id())
 		expired.DropExpired(l)(d.WorldId(), d.ChannelId(), d.MapId(), d.Id())
 	}

@@ -87,54 +87,12 @@ func (d Drop) Status() string {
 	return d.status
 }
 
-func (d Drop) CancelReservation() Drop {
-	return Drop{
-		id:           d.id,
-		worldId:      d.worldId,
-		channelId:    d.channelId,
-		mapId:        d.mapId,
-		itemId:       d.itemId,
-		equipmentId:  d.equipmentId,
-		quantity:     d.quantity,
-		meso:         d.meso,
-		dropType:     d.dropType,
-		x:            d.x,
-		y:            d.y,
-		ownerId:      d.ownerId,
-		ownerPartyId: d.ownerPartyId,
-		dropTime:     d.dropTime,
-		dropperId:    d.dropperId,
-		dropperX:     d.dropperX,
-		dropperY:     d.dropperY,
-		playerDrop:   d.playerDrop,
-		mod:          d.mod,
-		status:       "AVAILABLE",
-	}
+func (d Drop) CancelReservation() {
+	d.status = "AVAILABLE"
 }
 
-func (d Drop) Reserve() Drop {
-	return Drop{
-		id:           d.id,
-		worldId:      d.worldId,
-		channelId:    d.channelId,
-		mapId:        d.mapId,
-		itemId:       d.itemId,
-		equipmentId:  d.equipmentId,
-		quantity:     d.quantity,
-		meso:         d.meso,
-		dropType:     d.dropType,
-		x:            d.x,
-		y:            d.y,
-		ownerId:      d.ownerId,
-		ownerPartyId: d.ownerPartyId,
-		dropTime:     d.dropTime,
-		dropperId:    d.dropperId,
-		dropperX:     d.dropperX,
-		dropperY:     d.dropperY,
-		playerDrop:   d.playerDrop,
-		mod:          d.mod,
-		status:       "RESERVED",
-	}
+func (d Drop) Reserve() {
+	d.status = "RESERVED"
 }
 
 func (d Drop) MapId() uint32 {

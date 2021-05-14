@@ -59,7 +59,7 @@ func NewConsumer(cl *logrus.Logger, topicToken string, groupId string, ec handle
 			if err != nil {
 				l.WithError(err).Errorf("Could not unmarshal event into %s.", msg.Value)
 			} else {
-				h(l, event)
+				go h(l, event)
 			}
 		}
 	}

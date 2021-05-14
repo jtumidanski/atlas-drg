@@ -82,6 +82,6 @@ func GetDropById(dropId uint32) (*drop2.Drop, error) {
 	return drop2.GetRegistry().GetDrop(dropId)
 }
 
-func GetDropsForMap(worldId byte, channelId byte, mapId uint32) ([]drop2.Drop, error) {
+func GetDropsForMap(worldId byte, channelId byte, mapId uint32) ([]*drop2.Drop, error) {
 	return drop2.GetRegistry().GetDropsForMap(worldId, channelId, mapId)
 }
