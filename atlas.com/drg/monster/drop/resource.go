@@ -14,7 +14,7 @@ type GenericError struct {
 	Message string `json:"message"`
 }
 
-func HandleGetDropById(fl *logrus.Logger) http.HandlerFunc {
+func HandleGetDropById(fl logrus.FieldLogger) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		l := fl.WithFields(logrus.Fields{"originator": "GetDropById", "type": "rest_handler"})
 		dropId := getDropId(l)(r)

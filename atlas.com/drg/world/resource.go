@@ -15,7 +15,7 @@ type GenericError struct {
 	Message string `json:"message"`
 }
 
-func GetDropsInMap(fl *logrus.Logger) http.HandlerFunc {
+func GetDropsInMap(fl logrus.FieldLogger) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		l := fl.WithFields(logrus.Fields{"originator": "GetDropById", "type": "rest_handler"})
 		wid := getWorldId(l)(r)

@@ -4,22 +4,29 @@ import (
 	registries "atlas-drg/configuration"
 	"atlas-drg/drop"
 	"atlas-drg/drop/expired"
-	"atlas-drg/kafka/consumer"
+	"atlas-drg/kafka/consumers"
 	"atlas-drg/logger"
 	"atlas-drg/rest"
 	tasks "atlas-drg/task"
+	"context"
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 )
 
 func main() {
 	l := logger.CreateLogger()
+	l.Infoln("Starting main service.")
 
-	consumer.CreateEventConsumers(l)
+	wg := &sync.WaitGroup{}
+	ctx, cancel := context.WithCancel(context.Background())
 
-	rest.CreateRestService(l)
+	consumers.CreateEventConsumers(l, ctx, wg)
+
+	rest.CreateRestService(l, ctx, wg)
+
 	createTasks(l)
 
 	// trap sigterm or interrupt and gracefully shutdown the server
@@ -28,9 +35,11 @@ func main() {
 
 	// Block until a signal is received.
 	sig := <-c
-	l.Infoln("Shutting down via signal:", sig)
-
+	l.Infof("Initiating shutdown with signal %s.", sig)
+	cancel()
+	wg.Wait()
 	drop.ForEachDrop(destroyDrop(l))
+	l.Infoln("Service shutdown.")
 }
 
 func destroyDrop(l logrus.FieldLogger) drop.DropOperator {
