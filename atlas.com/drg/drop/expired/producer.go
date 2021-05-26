@@ -2,8 +2,7 @@ package expired
 
 import (
 	producer2 "atlas-drg/kafka/producer"
-	"context"
-	"log"
+	"github.com/sirupsen/logrus"
 )
 
 type dropExpiredEvent struct {
@@ -13,24 +12,15 @@ type dropExpiredEvent struct {
 	UniqueId  uint32 `json:"uniqueId"`
 }
 
-var Producer = func(l *log.Logger, ctx context.Context) *producer {
-	return &producer{
-		l:   l,
-		ctx: ctx,
+func DropExpired(l logrus.FieldLogger) func(worldId byte, channelId byte, mapId uint32, id uint32) {
+	producer := producer2.ProduceEvent(l, "TOPIC_DROP_EXPIRE_EVENT")
+	return func(worldId byte, channelId byte, mapId uint32, id uint32) {
+		e := &dropExpiredEvent{
+			WorldId:   worldId,
+			ChannelId: channelId,
+			MapId:     mapId,
+			UniqueId:  id,
+		}
+		producer(producer2.CreateKey(int(mapId)), e)
 	}
-}
-
-type producer struct {
-	l   *log.Logger
-	ctx context.Context
-}
-
-func (m *producer) Emit(worldId byte, channelId byte, mapId uint32, id uint32) {
-	e := &dropExpiredEvent{
-		WorldId:   worldId,
-		ChannelId: channelId,
-		MapId:     mapId,
-		UniqueId:  id,
-	}
-	producer2.ProduceEvent(m.l, "TOPIC_DROP_EXPIRE_EVENT", producer2.CreateKey(int(mapId)), e)
 }

@@ -6,6 +6,7 @@ type Drop struct {
 	channelId    byte
 	mapId        uint32
 	itemId       uint32
+	equipmentId  uint32
 	quantity     uint32
 	meso         uint32
 	dropType     byte
@@ -86,52 +87,12 @@ func (d Drop) Status() string {
 	return d.status
 }
 
-func (d Drop) CancelReservation() Drop {
-	return Drop{
-		id:           d.id,
-		worldId:      d.worldId,
-		channelId:    d.channelId,
-		mapId:        d.mapId,
-		itemId:       d.itemId,
-		quantity:     d.quantity,
-		meso:         d.meso,
-		dropType:     d.dropType,
-		x:            d.x,
-		y:            d.y,
-		ownerId:      d.ownerId,
-		ownerPartyId: d.ownerPartyId,
-		dropTime:     d.dropTime,
-		dropperId:    d.dropperId,
-		dropperX:     d.dropperX,
-		dropperY:     d.dropperY,
-		playerDrop:   d.playerDrop,
-		mod:          d.mod,
-		status:       "AVAILABLE",
-	}
+func (d Drop) CancelReservation() {
+	d.status = "AVAILABLE"
 }
 
-func (d Drop) Reserve() Drop {
-	return Drop{
-		id:           d.id,
-		worldId:      d.worldId,
-		channelId:    d.channelId,
-		mapId:        d.mapId,
-		itemId:       d.itemId,
-		quantity:     d.quantity,
-		meso:         d.meso,
-		dropType:     d.dropType,
-		x:            d.x,
-		y:            d.y,
-		ownerId:      d.ownerId,
-		ownerPartyId: d.ownerPartyId,
-		dropTime:     d.dropTime,
-		dropperId:    d.dropperId,
-		dropperX:     d.dropperX,
-		dropperY:     d.dropperY,
-		playerDrop:   d.playerDrop,
-		mod:          d.mod,
-		status:       "RESERVED",
-	}
+func (d Drop) Reserve() {
+	d.status = "RESERVED"
 }
 
 func (d Drop) MapId() uint32 {
@@ -148,4 +109,8 @@ func (d Drop) ChannelId() byte {
 
 func (d Drop) CharacterDrop() bool {
 	return d.playerDrop
+}
+
+func (d Drop) EquipmentId() uint32 {
+	return d.equipmentId
 }

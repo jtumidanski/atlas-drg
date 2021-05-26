@@ -5,7 +5,7 @@ import (
 	"atlas-drg/json"
 	"atlas-drg/monster/drop"
 	"github.com/gorilla/mux"
-	"log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 )
@@ -15,13 +15,14 @@ type GenericError struct {
 	Message string `json:"message"`
 }
 
-func GetDropsInMap(l *log.Logger) http.HandlerFunc {
+func GetDropsInMap(fl logrus.FieldLogger) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		wid := getWorldId(r)
-		cid := getChannelId(r)
-		mid := getMapId(r)
+		l := fl.WithFields(logrus.Fields{"originator": "GetDropById", "type": "rest_handler"})
+		wid := getWorldId(l)(r)
+		cid := getChannelId(l)(r)
+		mid := getMapId(l)(r)
 
-		ds, _ := drop.Processor(l).GetDropsForMap(wid, cid, mid)
+		ds, _ := drop.GetDropsForMap(wid, cid, mid)
 		rw.WriteHeader(http.StatusOK)
 		result := drop2.DropDataListContainer{}
 		result.Data = make([]drop2.DropData, 0)
@@ -35,6 +36,7 @@ func GetDropsInMap(l *log.Logger) http.HandlerFunc {
 					ChannelId:       d.ChannelId(),
 					MapId:           d.MapId(),
 					ItemId:          d.ItemId(),
+					EquipmentId:     d.EquipmentId(),
 					Quantity:        d.Quantity(),
 					Meso:            d.Meso(),
 					DropType:        d.Type(),
@@ -56,32 +58,38 @@ func GetDropsInMap(l *log.Logger) http.HandlerFunc {
 	}
 }
 
-func getWorldId(r *http.Request) byte {
-	vars := mux.Vars(r)
-	value, err := strconv.ParseUint(vars["worldId"], 10, 8)
-	if err != nil {
-		log.Println("Error parsing worldId as byte")
-		return 0
+func getWorldId(l logrus.FieldLogger) func(r *http.Request) byte {
+	return func(r *http.Request) byte {
+		vars := mux.Vars(r)
+		value, err := strconv.ParseUint(vars["worldId"], 10, 8)
+		if err != nil {
+			l.WithError(err).Errorf("Error parsing worldId as byte")
+			return 0
+		}
+		return byte(value)
 	}
-	return byte(value)
 }
 
-func getChannelId(r *http.Request) byte {
-	vars := mux.Vars(r)
-	value, err := strconv.ParseUint(vars["channelId"], 10, 8)
-	if err != nil {
-		log.Println("Error parsing channelId as byte")
-		return 0
+func getChannelId(l logrus.FieldLogger) func(r *http.Request) byte {
+	return func(r *http.Request) byte {
+		vars := mux.Vars(r)
+		value, err := strconv.ParseUint(vars["channelId"], 10, 8)
+		if err != nil {
+			l.WithError(err).Errorf("Error parsing channelId as byte")
+			return 0
+		}
+		return byte(value)
 	}
-	return byte(value)
 }
 
-func getMapId(r *http.Request) uint32 {
-	vars := mux.Vars(r)
-	value, err := strconv.ParseUint(vars["mapId"], 10, 32)
-	if err != nil {
-		log.Println("Error parsing mapId as uint32")
-		return 0
+func getMapId(l logrus.FieldLogger) func(r *http.Request) uint32 {
+	return func(r *http.Request) uint32 {
+		vars := mux.Vars(r)
+		value, err := strconv.ParseUint(vars["mapId"], 10, 32)
+		if err != nil {
+			l.WithError(err).Errorf("Error parsing mapId as uint32")
+			return 0
+		}
+		return uint32(value)
 	}
-	return uint32(value)
 }

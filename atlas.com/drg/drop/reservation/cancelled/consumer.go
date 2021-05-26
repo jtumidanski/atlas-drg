@@ -1,9 +1,9 @@
 package cancelled
 
 import (
-	"atlas-drg/kafka/consumer"
+	"atlas-drg/kafka/handler"
 	"atlas-drg/monster/drop"
-	"log"
+	"github.com/sirupsen/logrus"
 )
 
 type CancelDropReservationCommand struct {
@@ -11,18 +11,18 @@ type CancelDropReservationCommand struct {
 	DropId      uint32 `json:"dropId"`
 }
 
-func CancelDropReservationCommandCreator() consumer.EmptyEventCreator {
+func CancelDropReservationCommandCreator() handler.EmptyEventCreator {
 	return func() interface{} {
 		return &CancelDropReservationCommand{}
 	}
 }
 
-func HandleCancelDropReservationCommand() consumer.EventProcessor {
-	return func(l *log.Logger, e interface{}) {
+func HandleCancelDropReservationCommand() handler.EventHandler {
+	return func(l logrus.FieldLogger, e interface{}) {
 		if event, ok := e.(*CancelDropReservationCommand); ok {
-			drop.Processor(l).CancelDropReservation(event.DropId, event.CharacterId)
+			drop.CancelDropReservation(l)(event.DropId, event.CharacterId)
 		} else {
-			l.Printf("[ERROR] unable to cast event provided to handler [HandleCancelDropReservationCommand]")
+			l.Errorf("Unable to cast event provided to handler.")
 		}
 	}
 }

@@ -2,8 +2,7 @@ package gathered
 
 import (
 	producer2 "atlas-drg/kafka/producer"
-	"context"
-	"log"
+	"github.com/sirupsen/logrus"
 )
 
 type dropPickedUpEvent struct {
@@ -12,23 +11,14 @@ type dropPickedUpEvent struct {
 	MapId       uint32 `json:"mapId"`
 }
 
-var Producer = func(l *log.Logger, ctx context.Context) *producer {
-	return &producer{
-		l:   l,
-		ctx: ctx,
+func DropPickedUp(l logrus.FieldLogger) func(dropId uint32, characterId uint32, mapId uint32) {
+	producer := producer2.ProduceEvent(l, "TOPIC_PICKUP_DROP_EVENT")
+	return func(dropId uint32, characterId uint32, mapId uint32) {
+		e := &dropPickedUpEvent{
+			CharacterId: characterId,
+			DropId:      dropId,
+			MapId:       mapId,
+		}
+		producer(producer2.CreateKey(int(dropId)), e)
 	}
-}
-
-type producer struct {
-	l   *log.Logger
-	ctx context.Context
-}
-
-func (m *producer) Emit(dropId uint32, characterId uint32, mapId uint32) {
-	e := &dropPickedUpEvent{
-		CharacterId: characterId,
-		DropId:      dropId,
-		MapId:       mapId,
-	}
-	producer2.ProduceEvent(m.l, "TOPIC_PICKUP_DROP_EVENT", producer2.CreateKey(int(dropId)), e)
 }

@@ -1,9 +1,9 @@
 package reserved
 
 import (
-	"atlas-drg/kafka/consumer"
+	"atlas-drg/kafka/handler"
 	"atlas-drg/monster/drop"
-	"log"
+	"github.com/sirupsen/logrus"
 )
 
 type ReserveDropCommand struct {
@@ -11,18 +11,18 @@ type ReserveDropCommand struct {
 	DropId      uint32 `json:"dropId"`
 }
 
-func ReserveDropCommandCreator() consumer.EmptyEventCreator {
+func ReserveDropCommandCreator() handler.EmptyEventCreator {
 	return func() interface{} {
 		return &ReserveDropCommand{}
 	}
 }
 
-func HandleReserveDropCommand() consumer.EventProcessor {
-	return func(l *log.Logger, e interface{}) {
+func HandleReserveDropCommand() handler.EventHandler {
+	return func(l logrus.FieldLogger, e interface{}) {
 		if event, ok := e.(*ReserveDropCommand); ok {
-			drop.Processor(l).ReserveDrop(event.DropId, event.CharacterId)
+			drop.ReserveDrop(l)(event.DropId, event.CharacterId)
 		} else {
-			l.Printf("[ERROR] unable to cast event provided to handler [HandleCancelDropReservationCommand]")
+			l.Errorf("Unable to cast event provided to handler.")
 		}
 	}
 }

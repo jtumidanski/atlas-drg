@@ -3,17 +3,17 @@ package expired
 import (
 	registries "atlas-drg/configuration"
 	"atlas-drg/drop"
-	"context"
-	"log"
+	"atlas-drg/equipment"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
 type DropExpiration struct {
-	l        *log.Logger
+	l        logrus.FieldLogger
 	interval uint64
 }
 
-func NewDropExpiration(l *log.Logger, interval uint64) *DropExpiration {
+func NewDropExpiration(l logrus.FieldLogger, interval uint64) *DropExpiration {
 	return &DropExpiration{l, interval}
 }
 
@@ -31,8 +31,20 @@ func (r *DropExpiration) Run() {
 	for _, d := range ds {
 		if d.Status() == "AVAILABLE" {
 			if d.DropTime()+expire < uint64(time.Now().UnixNano()/int64(time.Millisecond)) {
-				drop.GetRegistry().RemoveDrop(d.Id())
-				Producer(r.l, context.Background()).Emit(d.WorldId(), d.ChannelId(), d.MapId(), d.Id())
+				_, err := drop.GetRegistry().RemoveDrop(d.Id())
+				if err != nil {
+					r.l.WithError(err).Errorf("Unable to remove drop from registry.")
+					continue
+				}
+
+				if d.EquipmentId() != 0 {
+					err := equipment.Delete(d.EquipmentId())
+					if err != nil {
+						r.l.WithError(err).Errorf("Generating equipment item %d for character %d, they were not awarded this item. Check request in ESO service.")
+						return
+					}
+				}
+				DropExpired(r.l)(d.WorldId(), d.ChannelId(), d.MapId(), d.Id())
 			}
 		}
 	}

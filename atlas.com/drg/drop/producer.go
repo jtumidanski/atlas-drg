@@ -2,8 +2,7 @@ package drop
 
 import (
 	producer2 "atlas-drg/kafka/producer"
-	"context"
-	"log"
+	"github.com/sirupsen/logrus"
 )
 
 type dropEvent struct {
@@ -27,39 +26,30 @@ type dropEvent struct {
 	Mod             byte   `json:"mod"`
 }
 
-var Producer = func(l *log.Logger, ctx context.Context) *producer {
-	return &producer{
-		l:   l,
-		ctx: ctx,
+func DropEvent(l logrus.FieldLogger) func(worldId byte, channelId byte, mapId uint32, drop *Drop) {
+	producer := producer2.ProduceEvent(l, "TOPIC_DROP_EVENT")
+	return func(worldId byte, channelId byte, mapId uint32, drop *Drop) {
+		e := &dropEvent{
+			WorldId:         worldId,
+			ChannelId:       channelId,
+			MapId:           mapId,
+			UniqueId:        drop.Id(),
+			ItemId:          drop.ItemId(),
+			Quantity:        drop.Quantity(),
+			Meso:            drop.Meso(),
+			DropType:        drop.Type(),
+			DropX:           drop.X(),
+			DropY:           drop.Y(),
+			OwnerId:         drop.OwnerId(),
+			OwnerPartyId:    drop.OwnerPartyId(),
+			DropTime:        drop.DropTime(),
+			DropperUniqueId: drop.DropperId(),
+			DropperX:        drop.DropperX(),
+			DropperY:        drop.DropperY(),
+			PlayerDrop:      drop.PlayerDrop(),
+			Mod:             drop.Mod(),
+		}
+		l.Debugf("Dropping item %d in map %d.", drop.ItemId(), drop.MapId())
+		producer(producer2.CreateKey(int(mapId)), e)
 	}
-}
-
-type producer struct {
-	l   *log.Logger
-	ctx context.Context
-}
-
-func (m *producer) Emit(worldId byte, channelId byte, mapId uint32, drop Drop) {
-	e := &dropEvent{
-		WorldId:         worldId,
-		ChannelId:       channelId,
-		MapId:           mapId,
-		UniqueId:        drop.Id(),
-		ItemId:          drop.ItemId(),
-		Quantity:        drop.Quantity(),
-		Meso:            drop.Meso(),
-		DropType:        drop.Type(),
-		DropX:           drop.X(),
-		DropY:           drop.Y(),
-		OwnerId:         drop.OwnerId(),
-		OwnerPartyId:    drop.OwnerPartyId(),
-		DropTime:        drop.DropTime(),
-		DropperUniqueId: drop.DropperId(),
-		DropperX:        drop.DropperX(),
-		DropperY:        drop.DropperY(),
-		PlayerDrop:      drop.PlayerDrop(),
-		Mod:             drop.Mod(),
-	}
-	m.l.Printf("[INFO] dropping item %d in map %d.", drop.ItemId(), drop.MapId())
-	producer2.ProduceEvent(m.l, "TOPIC_DROP_EVENT", producer2.CreateKey(int(mapId)), e)
 }

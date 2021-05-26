@@ -2,8 +2,7 @@ package reservation
 
 import (
 	producer2 "atlas-drg/kafka/producer"
-	"context"
-	"log"
+	"github.com/sirupsen/logrus"
 )
 
 type dropReservationEvent struct {
@@ -12,31 +11,25 @@ type dropReservationEvent struct {
 	Type        string `json:"type"`
 }
 
-var Producer = func(l *log.Logger, ctx context.Context) *producer {
-	return &producer{
-		l:   l,
-		ctx: ctx,
+func DropReservationFailure(l logrus.FieldLogger) func(dropId uint32, characterId uint32) {
+	producer := producer2.ProduceEvent(l, "TOPIC_DROP_RESERVATION_EVENT")
+	return func(dropId uint32, characterId uint32) {
+		emitReservation(producer, dropId, characterId, "FAILURE")
 	}
 }
 
-type producer struct {
-	l   *log.Logger
-	ctx context.Context
-}
-
-func (m *producer) EmitFailure(dropId uint32, characterId uint32) {
-	m.emit(dropId, characterId, "FAILURE")
-}
-
-func (m *producer) emit(dropId uint32, characterId uint32, theType string) {
+func emitReservation(producer func(key []byte, event interface{}), characterId uint32, dropId uint32, theType string) {
 	e := &dropReservationEvent{
 		CharacterId: characterId,
 		DropId:      dropId,
 		Type:        theType,
 	}
-	producer2.ProduceEvent(m.l, "TOPIC_DROP_RESERVATION_EVENT", producer2.CreateKey(int(dropId)), e)
+	producer(producer2.CreateKey(int(dropId)), e)
 }
 
-func (m *producer) EmitSuccess(dropId uint32, characterId uint32) {
-	m.emit(dropId, characterId, "SUCCESS")
+func DropReservationSuccess(l logrus.FieldLogger) func(dropId uint32, characterId uint32) {
+	producer := producer2.ProduceEvent(l, "TOPIC_DROP_RESERVATION_EVENT")
+	return func(dropId uint32, characterId uint32) {
+		emitReservation(producer, characterId, dropId, "SUCCESS")
+	}
 }
