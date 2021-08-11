@@ -40,7 +40,7 @@ func (r *DropExpiration) Run() {
 				if d.EquipmentId() != 0 {
 					err := equipment.Delete(d.EquipmentId())
 					if err != nil {
-						r.l.WithError(err).Errorf("Generating equipment item %d for character %d, they were not awarded this item. Check request in ESO service.")
+						r.l.WithError(err).Errorf("Deleting equipment item %d.", d.EquipmentId())
 						return
 					}
 				}
