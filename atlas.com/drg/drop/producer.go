@@ -2,6 +2,7 @@ package drop
 
 import (
 	producer2 "atlas-drg/kafka/producer"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,8 +27,8 @@ type dropEvent struct {
 	Mod             byte   `json:"mod"`
 }
 
-func DropEvent(l logrus.FieldLogger) func(worldId byte, channelId byte, mapId uint32, drop *Drop) {
-	producer := producer2.ProduceEvent(l, "TOPIC_DROP_EVENT")
+func DropEvent(l logrus.FieldLogger, span opentracing.Span) func(worldId byte, channelId byte, mapId uint32, drop *Drop) {
+	producer := producer2.ProduceEvent(l, span, "TOPIC_DROP_EVENT")
 	return func(worldId byte, channelId byte, mapId uint32, drop *Drop) {
 		e := &dropEvent{
 			WorldId:         worldId,

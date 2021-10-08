@@ -2,6 +2,7 @@ package expired
 
 import (
 	producer2 "atlas-drg/kafka/producer"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -12,8 +13,8 @@ type dropExpiredEvent struct {
 	UniqueId  uint32 `json:"uniqueId"`
 }
 
-func DropExpired(l logrus.FieldLogger) func(worldId byte, channelId byte, mapId uint32, id uint32) {
-	producer := producer2.ProduceEvent(l, "TOPIC_DROP_EXPIRE_EVENT")
+func DropExpired(l logrus.FieldLogger, span opentracing.Span) func(worldId byte, channelId byte, mapId uint32, id uint32) {
+	producer := producer2.ProduceEvent(l, span, "TOPIC_DROP_EXPIRE_EVENT")
 	return func(worldId byte, channelId byte, mapId uint32, id uint32) {
 		e := &dropExpiredEvent{
 			WorldId:   worldId,

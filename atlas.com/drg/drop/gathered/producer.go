@@ -2,6 +2,7 @@ package gathered
 
 import (
 	producer2 "atlas-drg/kafka/producer"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -11,8 +12,8 @@ type dropPickedUpEvent struct {
 	MapId       uint32 `json:"mapId"`
 }
 
-func DropPickedUp(l logrus.FieldLogger) func(dropId uint32, characterId uint32, mapId uint32) {
-	producer := producer2.ProduceEvent(l, "TOPIC_PICKUP_DROP_EVENT")
+func DropPickedUp(l logrus.FieldLogger, span opentracing.Span) func(dropId uint32, characterId uint32, mapId uint32) {
+	producer := producer2.ProduceEvent(l, span, "TOPIC_PICKUP_DROP_EVENT")
 	return func(dropId uint32, characterId uint32, mapId uint32) {
 		e := &dropPickedUpEvent{
 			CharacterId: characterId,

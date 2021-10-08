@@ -2,6 +2,7 @@ package reservation
 
 import (
 	producer2 "atlas-drg/kafka/producer"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -11,8 +12,8 @@ type dropReservationEvent struct {
 	Type        string `json:"type"`
 }
 
-func DropReservationFailure(l logrus.FieldLogger) func(dropId uint32, characterId uint32) {
-	producer := producer2.ProduceEvent(l, "TOPIC_DROP_RESERVATION_EVENT")
+func DropReservationFailure(l logrus.FieldLogger, span opentracing.Span) func(dropId uint32, characterId uint32) {
+	producer := producer2.ProduceEvent(l, span, "TOPIC_DROP_RESERVATION_EVENT")
 	return func(dropId uint32, characterId uint32) {
 		emitReservation(producer, dropId, characterId, "FAILURE")
 	}
@@ -27,8 +28,8 @@ func emitReservation(producer func(key []byte, event interface{}), characterId u
 	producer(producer2.CreateKey(int(dropId)), e)
 }
 
-func DropReservationSuccess(l logrus.FieldLogger) func(dropId uint32, characterId uint32) {
-	producer := producer2.ProduceEvent(l, "TOPIC_DROP_RESERVATION_EVENT")
+func DropReservationSuccess(l logrus.FieldLogger, span opentracing.Span) func(dropId uint32, characterId uint32) {
+	producer := producer2.ProduceEvent(l, span, "TOPIC_DROP_RESERVATION_EVENT")
 	return func(dropId uint32, characterId uint32) {
 		emitReservation(producer, characterId, dropId, "SUCCESS")
 	}

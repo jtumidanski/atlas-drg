@@ -1,8 +1,6 @@
 package rest
 
 import (
-	drop2 "atlas-drg/monster/drop"
-	"atlas-drg/world"
 	"context"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -10,19 +8,21 @@ import (
 	"sync"
 )
 
-func CreateRestService(l *logrus.Logger, ctx context.Context, wg *sync.WaitGroup) {
-	go NewServer(l, ctx, wg, ProduceRoutes)
+type RouteInitializer func(*mux.Router, logrus.FieldLogger)
+
+func CreateService(l *logrus.Logger, ctx context.Context, wg *sync.WaitGroup, basePath string, initializers ...RouteInitializer) {
+	go NewServer(l, ctx, wg, ProduceRoutes(basePath, initializers...))
 }
 
-func ProduceRoutes(l logrus.FieldLogger) http.Handler {
-	router := mux.NewRouter().StrictSlash(true).PathPrefix("/ms/drg").Subrouter()
-	router.Use(CommonHeader)
+func ProduceRoutes(basePath string, initializers ...RouteInitializer) func(l logrus.FieldLogger) http.Handler {
+	return func(l logrus.FieldLogger) http.Handler {
+		router := mux.NewRouter().PathPrefix(basePath).Subrouter().StrictSlash(true)
+		router.Use(CommonHeader)
 
-	sRouter := router.PathPrefix("/drops/{id}").Subrouter()
-	sRouter.HandleFunc("", drop2.HandleGetDropById(l))
+		for _, initializer := range initializers {
+			initializer(router, l)
+		}
 
-	iRouter := router.PathPrefix("/worlds/{worldId}/channels/{channelId}/maps/{mapId}/drops").Subrouter()
-	iRouter.HandleFunc("", world.GetDropsInMap(l))
-
-	return router
+		return router
+	}
 }

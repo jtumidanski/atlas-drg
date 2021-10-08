@@ -4,9 +4,12 @@ import (
 	registries "atlas-drg/configuration"
 	"atlas-drg/drop"
 	"atlas-drg/equipment"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 	"time"
 )
+
+const DropExpirationTask = "drop_expiration_task"
 
 type DropExpiration struct {
 	l        logrus.FieldLogger
@@ -27,6 +30,7 @@ func (r *DropExpiration) Run() {
 		expire = c.ItemExpireInterval
 	}
 
+	span := opentracing.StartSpan(DropExpirationTask)
 	ds := drop.GetRegistry().GetAllDrops()
 	for _, d := range ds {
 		if d.Status() == "AVAILABLE" {
@@ -38,16 +42,17 @@ func (r *DropExpiration) Run() {
 				}
 
 				if d.EquipmentId() != 0 {
-					err := equipment.Delete(d.EquipmentId())
+					err := equipment.Delete(r.l, span)(d.EquipmentId())
 					if err != nil {
 						r.l.WithError(err).Errorf("Deleting equipment item %d.", d.EquipmentId())
 						return
 					}
 				}
-				DropExpired(r.l)(d.WorldId(), d.ChannelId(), d.MapId(), d.Id())
+				DropExpired(r.l, span)(d.WorldId(), d.ChannelId(), d.MapId(), d.Id())
 			}
 		}
 	}
+	span.Finish()
 }
 
 func (r *DropExpiration) SleepTime() time.Duration {

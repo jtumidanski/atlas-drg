@@ -3,6 +3,7 @@ package reserved
 import (
 	"atlas-drg/kafka/handler"
 	"atlas-drg/monster/drop"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,9 +19,9 @@ func ReserveDropCommandCreator() handler.EmptyEventCreator {
 }
 
 func HandleReserveDropCommand() handler.EventHandler {
-	return func(l logrus.FieldLogger, e interface{}) {
+	return func(l logrus.FieldLogger, span opentracing.Span, e interface{}) {
 		if event, ok := e.(*ReserveDropCommand); ok {
-			drop.ReserveDrop(l)(event.DropId, event.CharacterId)
+			drop.ReserveDrop(l, span)(event.DropId, event.CharacterId)
 		} else {
 			l.Errorf("Unable to cast event provided to handler.")
 		}
