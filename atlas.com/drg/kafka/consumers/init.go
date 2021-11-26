@@ -34,5 +34,5 @@ func CreateEventConsumers(l *logrus.Logger, ctx context.Context, wg *sync.WaitGr
 
 func createEventConsumer(l *logrus.Logger, ctx context.Context, wg *sync.WaitGroup, name string, topicToken string, emptyEventCreator handler.EmptyEventCreator, processor handler.EventHandler) {
 	wg.Add(1)
-	go NewConsumer(l, ctx, wg, topicToken, name, "Drop Registry", emptyEventCreator, processor)
+	go NewConsumer(l, ctx, wg, name, topicToken, "Drop Registry", emptyEventCreator, processor)
 }
