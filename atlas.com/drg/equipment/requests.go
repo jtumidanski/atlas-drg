@@ -25,13 +25,8 @@ func CreateRandom(l logrus.FieldLogger, span opentracing.Span) func(itemId uint3
 					ItemId: itemId,
 				},
 			}}
-		resp, err := requests.Post(l, span)(fmt.Sprintf(randomEquipmentResource), input)
-		if err != nil {
-			return nil, err
-		}
-
 		ro := &DataContainer{}
-		err = requests.ProcessResponse(resp, ro)
+		err := requests.Post(l, span)(fmt.Sprintf(randomEquipmentResource), input, ro, &requests.ErrorListDataContainer{})
 		if err != nil {
 			return nil, err
 		}
@@ -41,7 +36,6 @@ func CreateRandom(l logrus.FieldLogger, span opentracing.Span) func(itemId uint3
 
 func Delete(l logrus.FieldLogger, span opentracing.Span) func(equipmentId uint32) error {
 	return func(equipmentId uint32) error {
-		_, err := requests.Delete(l, span)(fmt.Sprintf(equipResource, equipmentId))
-		return err
+		return requests.Delete(l, span)(fmt.Sprintf(equipResource, equipmentId))
 	}
 }
