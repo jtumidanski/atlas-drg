@@ -4,10 +4,6 @@ type DataContainer struct {
 	Data DataBody `json:"data"`
 }
 
-type DataListContainer struct {
-	Data []DataBody `json:"data"`
-}
-
 type DataBody struct {
 	Id         string     `json:"id"`
 	Type       string     `json:"type"`

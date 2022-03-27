@@ -21,12 +21,12 @@ func SpawnDrop(l logrus.FieldLogger, span opentracing.Span) func(worldId byte, c
 		it, _ := inventory.GetInventoryType(itemId)
 		var equipmentId uint32
 		if it == inventory.TypeValueEquip {
-			ro, err := equipment.CreateRandom(l, span)(itemId)
+			ro, _, err := equipment.CreateRandom(itemId)(l, span)
 			if err != nil {
 				l.WithError(err).Debugf("Generating equipment item %d for character %d, they were not awarded this item. Check request in ESO service.", itemId, ownerId)
 				return
 			}
-			eid, err := strconv.Atoi(ro.Data.Id)
+			eid, err := strconv.Atoi(ro.Data().Id)
 			if err != nil {
 				l.WithError(err).Debugf("Generating equipment item %d for character %d, they were not awarded this item. Invalid ID from ESO service.", itemId, ownerId)
 				return

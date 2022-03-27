@@ -15,23 +15,16 @@ const (
 	equipResource                  = equipmentResource + "/%d"
 )
 
-func CreateRandom(l logrus.FieldLogger, span opentracing.Span) func(itemId uint32) (*DataContainer, error) {
-	return func(itemId uint32) (*DataContainer, error) {
-		input := &DataContainer{
-			Data: DataBody{
-				Id:   "0",
-				Type: "com.atlas.eso.attribute.EquipmentAttributes",
-				Attributes: Attributes{
-					ItemId: itemId,
-				},
-			}}
-		ro := &DataContainer{}
-		err := requests.Post(l, span)(fmt.Sprintf(randomEquipmentResource), input, ro, &requests.ErrorListDataContainer{})
-		if err != nil {
-			return nil, err
-		}
-		return ro, nil
-	}
+func CreateRandom(itemId uint32) requests.PostRequest[Attributes] {
+	input := &DataContainer{
+		Data: DataBody{
+			Id:   "0",
+			Type: "com.atlas.eso.attribute.EquipmentAttributes",
+			Attributes: Attributes{
+				ItemId: itemId,
+			},
+		}}
+	return requests.MakePostRequest[Attributes](fmt.Sprintf(randomEquipmentResource), input)
 }
 
 func Delete(l logrus.FieldLogger, span opentracing.Span) func(equipmentId uint32) error {
