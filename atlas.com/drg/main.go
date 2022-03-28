@@ -1,10 +1,10 @@
 package main
 
 import (
+	"atlas-drg/character"
 	registries "atlas-drg/configuration"
 	"atlas-drg/drop"
-	"atlas-drg/drop/expired"
-	"atlas-drg/kafka/consumers"
+	"atlas-drg/kafka"
 	"atlas-drg/logger"
 	drop2 "atlas-drg/monster/drop"
 	"atlas-drg/rest"
@@ -22,6 +22,7 @@ import (
 )
 
 const serviceName = "atlas-drg"
+const consumerGroupId = "Drop Registry"
 
 func main() {
 	l := logger.CreateLogger(serviceName)
@@ -41,7 +42,12 @@ func main() {
 		}
 	}(tc)
 
-	consumers.CreateEventConsumers(l, ctx, wg)
+	kafka.CreateConsumers(l, ctx, wg,
+		character.SpawnDropConsumer(consumerGroupId),
+		drop.SpawnConsumer(consumerGroupId),
+		drop.CancelReservationConsumer(consumerGroupId),
+		drop.ReserveConsumer(consumerGroupId),
+		drop.PickupConsumer(consumerGroupId))
 
 	rest.CreateService(l, ctx, wg, "/ms/drg", drop2.InitResource, world.InitResource)
 
@@ -58,16 +64,9 @@ func main() {
 	wg.Wait()
 
 	span := opentracing.StartSpan("shutdown")
-	drop.ForEachDrop(destroyDrop(l, span))
+	drop.ForEachDrop(drop.Destroy(l, span))
 	span.Finish()
 	l.Infoln("Service shutdown.")
-}
-
-func destroyDrop(l logrus.FieldLogger, span opentracing.Span) drop.DropOperator {
-	return func(d *drop.Drop) {
-		drop.GetRegistry().RemoveDrop(d.Id())
-		expired.DropExpired(l, span)(d.WorldId(), d.ChannelId(), d.MapId(), d.Id())
-	}
 }
 
 func createTasks(l logrus.FieldLogger) {
@@ -76,5 +75,5 @@ func createTasks(l logrus.FieldLogger) {
 		return
 	}
 
-	go tasks.Register(expired.NewDropExpiration(l, c.ItemExpireCheck))
+	go tasks.Register(drop.NewExpirationTask(l, c.ItemExpireCheck))
 }

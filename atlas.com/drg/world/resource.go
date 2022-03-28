@@ -1,9 +1,8 @@
 package world
 
 import (
-	drop2 "atlas-drg/drop"
+	"atlas-drg/drop"
 	"atlas-drg/json"
-	"atlas-drg/monster/drop"
 	"atlas-drg/rest"
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
@@ -68,16 +67,16 @@ func handleGetDropsInMap(l logrus.FieldLogger) func(span opentracing.Span) func(
 	return func(span opentracing.Span) func(worldId byte, channelId byte, mapId uint32) http.HandlerFunc {
 		return func(worldId byte, channelId byte, mapId uint32) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				ds, _ := drop.GetDropsForMap(worldId, channelId, mapId)
+				ds, _ := drop.GetForMap(worldId, channelId, mapId)
 
-				result := drop2.DropDataListContainer{}
-				result.Data = make([]drop2.DropData, 0)
+				result := drop.DropDataListContainer{}
+				result.Data = make([]drop.DropData, 0)
 
 				for _, d := range ds {
-					data := drop2.DropData{
+					data := drop.DropData{
 						Id:   strconv.Itoa(int(d.Id())),
 						Type: "com.atlas.drg.rest.attribute.DropAttributes",
-						Attributes: drop2.DropAttributes{
+						Attributes: drop.DropAttributes{
 							WorldId:         d.WorldId(),
 							ChannelId:       d.ChannelId(),
 							MapId:           d.MapId(),

@@ -53,7 +53,7 @@ func handleGetDropById(fl logrus.FieldLogger) func(span opentracing.Span) func(d
 	return func(span opentracing.Span) func(dropId uint32) http.HandlerFunc {
 		return func(dropId uint32) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				d, err := GetDropById(dropId)
+				d, err := drop.GetById(dropId)
 				if err != nil {
 					w.WriteHeader(http.StatusNotFound)
 					json.ToJSON(&GenericError{Message: err.Error()}, w)

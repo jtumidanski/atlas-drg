@@ -1,7 +1,7 @@
 package drop
 
 import (
-	producer2 "atlas-drg/kafka/producer"
+	"atlas-drg/kafka"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
@@ -27,8 +27,8 @@ type dropEvent struct {
 	Mod             byte   `json:"mod"`
 }
 
-func DropEvent(l logrus.FieldLogger, span opentracing.Span) func(worldId byte, channelId byte, mapId uint32, drop *Drop) {
-	producer := producer2.ProduceEvent(l, span, "TOPIC_DROP_EVENT")
+func emitEvent(l logrus.FieldLogger, span opentracing.Span) func(worldId byte, channelId byte, mapId uint32, drop *Drop) {
+	producer := kafka.ProduceEvent(l, span, "TOPIC_DROP_EVENT")
 	return func(worldId byte, channelId byte, mapId uint32, drop *Drop) {
 		e := &dropEvent{
 			WorldId:         worldId,
@@ -51,6 +51,73 @@ func DropEvent(l logrus.FieldLogger, span opentracing.Span) func(worldId byte, c
 			Mod:             drop.Mod(),
 		}
 		l.Debugf("Dropping item %d in map %d.", drop.ItemId(), drop.MapId())
-		producer(producer2.CreateKey(int(mapId)), e)
+		producer(kafka.CreateKey(int(mapId)), e)
+	}
+}
+
+type dropExpiredEvent struct {
+	WorldId   byte   `json:"worldId"`
+	ChannelId byte   `json:"channelId"`
+	MapId     uint32 `json:"mapId"`
+	UniqueId  uint32 `json:"uniqueId"`
+}
+
+func emitExpiredEvent(l logrus.FieldLogger, span opentracing.Span) func(worldId byte, channelId byte, mapId uint32, id uint32) {
+	producer := kafka.ProduceEvent(l, span, "TOPIC_DROP_EXPIRE_EVENT")
+	return func(worldId byte, channelId byte, mapId uint32, id uint32) {
+		e := &dropExpiredEvent{
+			WorldId:   worldId,
+			ChannelId: channelId,
+			MapId:     mapId,
+			UniqueId:  id,
+		}
+		producer(kafka.CreateKey(int(mapId)), e)
+	}
+}
+
+type dropPickedUpEvent struct {
+	CharacterId uint32 `json:"characterId"`
+	DropId      uint32 `json:"dropId"`
+	MapId       uint32 `json:"mapId"`
+}
+
+func emitPickedUp(l logrus.FieldLogger, span opentracing.Span) func(dropId uint32, characterId uint32, mapId uint32) {
+	producer := kafka.ProduceEvent(l, span, "TOPIC_PICKUP_DROP_EVENT")
+	return func(dropId uint32, characterId uint32, mapId uint32) {
+		e := &dropPickedUpEvent{
+			CharacterId: characterId,
+			DropId:      dropId,
+			MapId:       mapId,
+		}
+		producer(kafka.CreateKey(int(dropId)), e)
+	}
+}
+
+type dropReservationEvent struct {
+	CharacterId uint32 `json:"characterId"`
+	DropId      uint32 `json:"dropId"`
+	Type        string `json:"type"`
+}
+
+func emitReservationFailure(l logrus.FieldLogger, span opentracing.Span) func(dropId uint32, characterId uint32) {
+	producer := kafka.ProduceEvent(l, span, "TOPIC_DROP_RESERVATION_EVENT")
+	return func(dropId uint32, characterId uint32) {
+		emitReservation(producer, dropId, characterId, "FAILURE")
+	}
+}
+
+func emitReservation(producer func(key []byte, event interface{}), characterId uint32, dropId uint32, theType string) {
+	e := &dropReservationEvent{
+		CharacterId: characterId,
+		DropId:      dropId,
+		Type:        theType,
+	}
+	producer(kafka.CreateKey(int(dropId)), e)
+}
+
+func emitReservationSuccess(l logrus.FieldLogger, span opentracing.Span) func(dropId uint32, characterId uint32) {
+	producer := kafka.ProduceEvent(l, span, "TOPIC_DROP_RESERVATION_EVENT")
+	return func(dropId uint32, characterId uint32) {
+		emitReservation(producer, characterId, dropId, "SUCCESS")
 	}
 }
