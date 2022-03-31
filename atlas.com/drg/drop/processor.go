@@ -3,32 +3,12 @@ package drop
 import (
 	"atlas-drg/equipment"
 	"atlas-drg/inventory"
+	"atlas-drg/model"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 	"strconv"
 	"time"
 )
-
-type DropOperator func(*Drop)
-
-type DropsOperator func([]*Drop)
-
-func ForEachDrop(f DropOperator) {
-	ForAllDrops(ExecuteForEachDrop(f))
-}
-
-func ForAllDrops(f DropsOperator) {
-	drops := GetRegistry().GetAllDrops()
-	f(drops)
-}
-
-func ExecuteForEachDrop(f DropOperator) DropsOperator {
-	return func(drops []*Drop) {
-		for _, drop := range drops {
-			f(drop)
-		}
-	}
-}
 
 func SpawnDrop(l logrus.FieldLogger, span opentracing.Span) func(worldId byte, channelId byte, mapId uint32, itemId uint32, quantity uint32,
 	mesos uint32, dropType byte, x int16, y int16, ownerId uint32, ownerPartyId uint32, dropperId uint32,
@@ -97,20 +77,26 @@ func Gather(l logrus.FieldLogger, span opentracing.Span) func(dropId uint32, cha
 	}
 }
 
-func GetById(dropId uint32) (*Drop, error) {
+func GetById(dropId uint32) (Drop, error) {
 	return GetRegistry().GetDrop(dropId)
 }
 
-func GetForMap(worldId byte, channelId byte, mapId uint32) ([]*Drop, error) {
+func GetForMap(worldId byte, channelId byte, mapId uint32) ([]Drop, error) {
 	return GetRegistry().GetDropsForMap(worldId, channelId, mapId)
 }
 
-func Destroy(l logrus.FieldLogger, span opentracing.Span) DropOperator {
-	return func(d *Drop) {
-		d, err := GetRegistry().RemoveDrop(d.Id())
+func AllModelProvider() model.SliceProvider[Drop] {
+	return model.FixedSliceProvider[Drop](GetRegistry().GetAllDrops())
+}
+
+func Destroy(l logrus.FieldLogger, span opentracing.Span) model.Operator[Drop] {
+	return func(d Drop) error {
+		rd, err := GetRegistry().RemoveDrop(d.Id())
 		if err != nil {
-			l.WithError(err).Errorf("Unable to destroy drop %d.", d.Id())
+			l.WithError(err).Errorf("Unable to destroy drop %d.", rd.Id())
+			return err
 		}
-		emitExpiredEvent(l, span)(d.WorldId(), d.ChannelId(), d.MapId(), d.Id())
+		emitExpiredEvent(l, span)(rd.WorldId(), rd.ChannelId(), rd.MapId(), rd.Id())
+		return nil
 	}
 }

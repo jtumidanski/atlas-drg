@@ -6,6 +6,7 @@ import (
 	"atlas-drg/drop"
 	"atlas-drg/kafka"
 	"atlas-drg/logger"
+	"atlas-drg/model"
 	drop2 "atlas-drg/monster/drop"
 	"atlas-drg/rest"
 	tasks "atlas-drg/task"
@@ -64,7 +65,7 @@ func main() {
 	wg.Wait()
 
 	span := opentracing.StartSpan("shutdown")
-	drop.ForEachDrop(drop.Destroy(l, span))
+	model.ForEach(drop.AllModelProvider(), drop.Destroy(l, span))
 	span.Finish()
 	l.Infoln("Service shutdown.")
 }

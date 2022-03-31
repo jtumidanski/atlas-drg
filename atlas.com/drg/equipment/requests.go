@@ -29,6 +29,6 @@ func CreateRandom(itemId uint32) requests.PostRequest[Attributes] {
 
 func Delete(l logrus.FieldLogger, span opentracing.Span) func(equipmentId uint32) error {
 	return func(equipmentId uint32) error {
-		return requests.Delete(l, span)(fmt.Sprintf(equipResource, equipmentId))
+		return requests.Delete(l, span)(fmt.Sprintf(equipResource, equipmentId), nil)
 	}
 }

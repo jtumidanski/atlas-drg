@@ -231,35 +231,35 @@ func (d *dropRegistry) RemoveDrop(dropId uint32) (*Drop, error) {
 	return drop, nil
 }
 
-func (d *dropRegistry) GetDrop(dropId uint32) (*Drop, error) {
+func (d *dropRegistry) GetDrop(dropId uint32) (Drop, error) {
 	d.lockDrop(dropId)
 	drop, ok := d.getDrop(dropId)
 	if !ok {
 		d.unlockDrop(dropId)
-		return nil, errors.New("drop not found")
+		return Drop{}, errors.New("drop not found")
 	}
 	d.unlockDrop(dropId)
-	return drop, nil
+	return *drop, nil
 }
 
-func (d *dropRegistry) GetDropsForMap(worldId byte, channelId byte, mapId uint32) ([]*Drop, error) {
+func (d *dropRegistry) GetDropsForMap(worldId byte, channelId byte, mapId uint32) ([]Drop, error) {
 	mk := mapKey{worldId: worldId, channelId: channelId, mapId: mapId}
-	drops := make([]*Drop, 0)
+	drops := make([]Drop, 0)
 	d.lockMap(mk)
 	for _, dropId := range d.dropsInMap[mk] {
 		if drop, ok := d.getDrop(dropId); ok {
-			drops = append(drops, drop)
+			drops = append(drops, *drop)
 		}
 	}
 	d.unlockMap(mk)
 	return drops, nil
 }
 
-func (d *dropRegistry) GetAllDrops() []*Drop {
-	var drops []*Drop
+func (d *dropRegistry) GetAllDrops() []Drop {
+	var drops []Drop
 	d.adminMutex.RLock()
 	for _, drop := range d.dropMap {
-		drops = append(drops, drop)
+		drops = append(drops, *drop)
 	}
 	d.adminMutex.RUnlock()
 	return drops
